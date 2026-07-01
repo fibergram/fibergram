@@ -4,6 +4,7 @@
   "description": "Backend for long-lived sessions (DialogStore/DurableTimer behind ports on workflow/cluster)",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/fibergram/fibergram/tree/main/packages/durable",
   "sideEffects": [],
   "publishConfig": {
     "access": "public",

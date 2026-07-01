@@ -1,7 +1,7 @@
 /**
- * `@fibergram/testing` — TestTelegram Layer, synthetic updates, TestClock dialog timeouts
+ * `@fibergram/testing` - TestTelegram Layer, synthetic updates, TestClock dialog timeouts
  *
- * Package skeleton: the public API lands incrementally through M0 (see docs-ai/fibergram-design.md).
+ * Package skeleton: the public API lands incrementally (see docs-ai/fibergram-design.md).
  *
  * @since 0.0.0
  */

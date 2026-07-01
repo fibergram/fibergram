@@ -4,6 +4,7 @@
   "description": "Ingestion Layer: HttpServer + secret-token validation, framework-agnostic WebhookHandler",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/fibergram/fibergram/tree/main/packages/webhook",
   "sideEffects": [],
   "publishConfig": {
     "access": "public",

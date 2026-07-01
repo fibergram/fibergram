@@ -4,6 +4,7 @@
   "description": "Ingestion Layer: long polling + offset management",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/fibergram/fibergram/tree/main/packages/polling",
   "sideEffects": [],
   "publishConfig": {
     "access": "public",

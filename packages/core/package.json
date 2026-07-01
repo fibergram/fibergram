@@ -4,6 +4,7 @@
   "description": "Dialog/decider, receive, Decision, EntityManager, Router, typed errors, CallbackData",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/fibergram/fibergram/tree/main/packages/core",
   "sideEffects": [],
   "publishConfig": {
     "access": "public",

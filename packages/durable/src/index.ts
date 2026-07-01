@@ -1,7 +1,7 @@
 /**
- * `@fibergram/durable` — Backend for long-lived sessions (DialogStore/DurableTimer behind ports on workflow/cluster)
+ * `@fibergram/durable` - Backend for long-lived sessions (DialogStore/DurableTimer behind ports on workflow/cluster)
  *
- * Package skeleton: the public API lands incrementally through M0 (see docs-ai/fibergram-design.md).
+ * Package skeleton: the public API lands incrementally (see docs-ai/fibergram-design.md).
  *
  * @since 0.0.0
  */

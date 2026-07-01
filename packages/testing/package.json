@@ -4,6 +4,7 @@
   "description": "TestTelegram Layer, synthetic updates, TestClock dialog timeouts",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/fibergram/fibergram/tree/main/packages/testing",
   "sideEffects": [],
   "publishConfig": {
     "access": "public",

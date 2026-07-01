@@ -1,20 +1,30 @@
 /**
- * `@fibergram/client` — TelegramClient (Tag+Layer over HttpClient) + Bot API Schema types
+ * `@fibergram/client` - `TelegramClient` (Tag + Layer over `HttpClient`) plus
+ * the Bot API edge schemas. This package owns the `snake_case <-> camelCase`
+ * boundary (design section 5.3) and the typed Telegram error union (section 5.2); everything
+ * else in fibergram builds on top of it.
  *
- * Package skeleton: the public API lands incrementally through M0 (see docs-ai/fibergram-design.md).
- *
- * @since 0.0.0
+ * @since 0.1.0
  */
 
 /**
- * Skeleton package version. Placeholder until the first real export.
+ * Bot API edge schemas (`Update`, `Message`, `Chat`, `User`, request/response
+ * shapes).
  *
- * @example
- * import { version } from "@fibergram/client"
- *
- * console.log(version)
- *
- * @category constants
- * @since 0.0.0
+ * @since 0.1.0
  */
-export const version = "0.0.0" as const
+export * as BotApi from "./BotApi.js"
+
+/**
+ * The typed Telegram error union and its response mapper.
+ *
+ * @since 0.1.0
+ */
+export * as TelegramError from "./TelegramError.js"
+
+/**
+ * The `TelegramClient` service, its layers and constructors.
+ *
+ * @since 0.1.0
+ */
+export * as TelegramClient from "./TelegramClient.js"

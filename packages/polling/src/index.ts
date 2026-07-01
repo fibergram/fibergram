@@ -1,20 +1,14 @@
 /**
- * `@fibergram/polling` — Ingestion Layer: long polling + offset management
+ * `@fibergram/polling` - long-polling ingestion. A producer into the shared
+ * `Queue<Update>` the dispatcher drains (design section 7); it depends only on
+ * `@fibergram/client`, never on the dialog engine.
  *
- * Package skeleton: the public API lands incrementally through M0 (see docs-ai/fibergram-design.md).
- *
- * @since 0.0.0
+ * @since 0.1.0
  */
 
 /**
- * Skeleton package version. Placeholder until the first real export.
+ * The long-polling ingestion constructor. See {@link module:Polling}.
  *
- * @example
- * import { version } from "@fibergram/polling"
- *
- * console.log(version)
- *
- * @category constants
- * @since 0.0.0
+ * @since 0.1.0
  */
-export const version = "0.0.0" as const
+export * as Polling from "./Polling.js"

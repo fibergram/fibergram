@@ -4,6 +4,7 @@
   "description": "TelegramClient (Tag+Layer over HttpClient) + Bot API Schema types",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/fibergram/fibergram/tree/main/packages/client",
   "sideEffects": [],
   "publishConfig": {
     "access": "public",

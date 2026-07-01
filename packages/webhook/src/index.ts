@@ -1,7 +1,7 @@
 /**
- * `@fibergram/webhook` — Ingestion Layer: HttpServer + secret-token validation, framework-agnostic WebhookHandler
+ * `@fibergram/webhook` - Ingestion Layer: HttpServer + secret-token validation, framework-agnostic WebhookHandler
  *
- * Package skeleton: the public API lands incrementally through M0 (see docs-ai/fibergram-design.md).
+ * Package skeleton: the public API lands incrementally (see docs-ai/fibergram-design.md).
  *
  * @since 0.0.0
  */
