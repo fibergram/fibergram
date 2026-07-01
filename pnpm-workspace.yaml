@@ -1,0 +1,20 @@
+packages:
+  - "packages/*"
+
+# Centralized dependency versions (design §14.1).
+# effect is pinned hard (no caret) — volatile beta, upgraded deliberately per changelog (§9).
+catalog:
+  # --- Effect v4 (primary target, §9) ---
+  effect: 4.0.0-beta.92
+  "@effect/vitest": 4.0.0-beta.92
+
+  # --- Dev tooling ---
+  "@effect/language-service": ^0.86.2
+  "@effect/docgen": ^0.5.2
+  typescript: ~5.9.3
+  vitest: ^3.2.6
+  turbo: ^2.10.2
+  "@changesets/cli": ^2.31.0
+  "@arethetypeswrong/cli": ^0.18.4
+  madge: ^8.0.0
+  tsx: ^4.22.4

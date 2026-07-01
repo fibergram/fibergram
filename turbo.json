@@ -1,0 +1,27 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "stream",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "*.tsbuildinfo"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "dependsOn": []
+    },
+    "docgen": {
+      "dependsOn": ["^build"],
+      "outputs": ["docs/**"]
+    },
+    "check:exports": {
+      "dependsOn": ["build"]
+    }
+  }
+}

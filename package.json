@@ -1,0 +1,35 @@
+{
+  "name": "fibergram-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Effect-native фреймворк для Telegram-ботов: handler = Effect<A, E, R>, диалог = addressable entity",
+  "license": "MIT",
+  "packageManager": "pnpm@10.26.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "docgen": "turbo run docgen",
+    "check:exports": "turbo run check:exports",
+    "circular": "madge --circular --extensions ts packages/*/src",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build && changeset publish"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
+    "@changesets/cli": "catalog:",
+    "@effect/language-service": "catalog:",
+    "madge": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Solution file: references only, no files of its own.
+  // `tsc -b` builds the graph in the right order.
+  "files": [],
+  "references": [
+    { "path": "packages/client" },
+    { "path": "packages/core" },
+    { "path": "packages/polling" },
+    { "path": "packages/webhook" },
+    { "path": "packages/durable" },
+    { "path": "packages/testing" }
+  ]
+}
