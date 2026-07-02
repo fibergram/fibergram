@@ -31,6 +31,7 @@ Added in v0.1.0
   - [From "./Dispatcher.js"](#from-dispatcherjs)
   - [From "./EntityManager.js"](#from-entitymanagerjs)
   - [From "./Retry.js"](#from-retryjs)
+  - [From "./Router.js"](#from-routerjs)
   - [From "./UpdateContext.js"](#from-updatecontextjs)
 
 ---
@@ -180,6 +181,19 @@ Retry that honours Telegram's `retry_after`.
 
 ```ts
 export * as Retry from "./Retry.js"
+```
+
+Added in v0.1.0
+
+## From "./Router.js"
+
+Handler-style update routing with declarative `Command`/`CallbackData` sugar
+and type-level requirement accumulation.
+
+**Signature**
+
+```ts
+export * as Router from "./Router.js"
 ```
 
 Added in v0.1.0

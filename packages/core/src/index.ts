@@ -97,3 +97,11 @@ export * as Command from "./Command.js"
  * @since 0.1.0
  */
 export * as Coroutine from "./Coroutine.js"
+
+/**
+ * Handler-style update routing with declarative `Command`/`CallbackData` sugar
+ * and type-level requirement accumulation.
+ *
+ * @since 0.1.0
+ */
+export * as Router from "./Router.js"
