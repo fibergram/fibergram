@@ -1,20 +1,23 @@
 /**
- * `@fibergram/testing` - TestTelegram Layer, synthetic updates, TestClock dialog timeouts
- *
- * Package skeleton: the public API lands incrementally (see docs-ai/fibergram-design.md).
+ * `@fibergram/testing` - run the whole bot without a network (design section 5.6).
+ * A recording `TelegramClient` double ({@link module:TestTelegram}) captures
+ * outbound calls so a test asserts *"the handler sent X"*, {@link module:Updates}
+ * builds synthetic updates to feed in, and `@effect/vitest`'s `TestClock` cranks
+ * dialog timeouts - all in-memory.
  *
  * @since 0.0.0
  */
 
 /**
- * Skeleton package version. Placeholder until the first real export.
+ * The recording `TelegramClient` double and its constructors.
  *
- * @example
- * import { version } from "@fibergram/testing"
- *
- * console.log(version)
- *
- * @category constants
- * @since 0.0.0
+ * @since 0.1.0
  */
-export const version = "0.0.0" as const
+export * as TestTelegram from "./TestTelegram.js"
+
+/**
+ * Synthetic `Update` factories (text, command, callback) for feeding a bot.
+ *
+ * @since 0.1.0
+ */
+export * as Updates from "./Updates.js"
