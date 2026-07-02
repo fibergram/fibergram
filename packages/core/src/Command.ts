@@ -11,8 +11,9 @@
  *
  * @since 0.1.0
  */
-import type { BotApi } from "@fibergram/client"
 import { Data, Effect, Option, Schema } from "effect"
+
+import type { BotApi } from "@fibergram/client"
 
 /**
  * Raised when a command's arguments don't decode against its schema (missing,
@@ -59,7 +60,7 @@ export interface Command<Args> {
 const stripSlash = (name: string): string => (name.startsWith("/") ? name.slice(1) : name)
 
 // /name  |  /name@bot  |  /name args...  |  /name@bot args...
-const commandPattern = /^\/([A-Za-z0-9_]+)(?:@[A-Za-z0-9_]+)?(?:\s+([\s\S]+))?$/
+const commandPattern = /^\/(\w+)(?:@\w+)?(?:\s+([\s\S]+))?$/
 
 /**
  * Declares a {@link Command} named `name` (with or without a leading slash) whose
@@ -113,10 +114,10 @@ export const make = <Fields extends Schema.Struct.Fields = {}>(
       const key = keys[0]
       if (key !== undefined && matched.raw.length > 0) record[key] = matched.raw
     } else {
-      keys.forEach((key, index) => {
+      for (const [index, key] of keys.entries()) {
         const token = matched.tokens[index]
         if (token !== undefined) record[key] = token
-      })
+      }
     }
     // Command arg schemas are plain data (no decoding services), so erase the
     // schema's `DecodingServices` from the requirement channel.

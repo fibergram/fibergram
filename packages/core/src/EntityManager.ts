@@ -10,14 +10,16 @@
  *
  * @since 0.1.0
  */
-import type { BotApi } from "@fibergram/client"
-import type { Cause } from "effect"
-import { Effect, HashMap, Latch, Option, Queue, Ref, Scope } from "effect"
-import * as DialogAddress from "./DialogAddress.js"
+import { Effect, HashMap, Latch, Option, Queue, Ref } from "effect"
+
 import { Dedup } from "./Dedup.js"
-import type { Dialog } from "./Dialog.js"
+import * as DialogAddress from "./DialogAddress.js"
 import { DialogStore } from "./DialogStore.js"
 import * as UpdateContext from "./UpdateContext.js"
+
+import type { Dialog } from "./Dialog.js"
+import type { BotApi } from "@fibergram/client"
+import type { Cause , Scope } from "effect"
 
 /**
  * The manager's public surface: hand it an update and it routes, dedups, orders

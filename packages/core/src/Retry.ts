@@ -8,8 +8,9 @@
  *
  * @since 0.1.0
  */
-import { TelegramError } from "@fibergram/client"
 import { Effect } from "effect"
+
+import type { TelegramError } from "@fibergram/client"
 
 /**
  * Retries `effect` on {@link TelegramError.RateLimited}, sleeping for the

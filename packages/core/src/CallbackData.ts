@@ -13,8 +13,9 @@
  *
  * @since 0.1.0
  */
-import { BotApi } from "@fibergram/client"
 import { Context, Data, Effect, Layer, Option, Ref, Schema } from "effect"
+
+import type { BotApi } from "@fibergram/client"
 
 /** The Bot API hard limit on a `callback_data` string, in bytes. */
 const MAX_BYTES = 64
@@ -26,8 +27,8 @@ const byteLength = (value: string): number => {
   for (let i = 0; i < value.length; i++) {
     const code = value.charCodeAt(i)
     if (code < 0x80) bytes += 1
-    else if (code < 0x800) bytes += 2
-    else if (code >= 0xd800 && code <= 0xdbff) {
+    else if (code < 0x8_00) bytes += 2
+    else if (code >= 0xD8_00 && code <= 0xDB_FF) {
       // High surrogate: a full code point is 4 bytes; skip its low surrogate.
       bytes += 4
       i++

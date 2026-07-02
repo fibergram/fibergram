@@ -1,9 +1,10 @@
-import { TelegramError } from "@fibergram/client"
-import { Retry } from "@fibergram/core"
 import { it } from "@effect/vitest"
 import { Duration, Effect, Fiber, Ref } from "effect"
 import { TestClock } from "effect/testing"
 import { describe, expect } from "vitest"
+
+import { TelegramError } from "@fibergram/client"
+import { Retry } from "@fibergram/core"
 
 describe("retryRateLimited (section 5.2 - honour retry_after)", () => {
   it.effect("waits exactly retry_after, retries, then succeeds", () =>

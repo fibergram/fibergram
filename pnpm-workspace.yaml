@@ -19,6 +19,16 @@ catalog:
   madge: ^8.0.0
   "@types/node": ^22.10.0
 
+  # --- Lint (type-aware TS + unicorn/import-x/regexp) ---
+  eslint: ^9.37.0
+  "@eslint/js": ^9.37.0
+  typescript-eslint: ^8.46.0
+  eslint-plugin-unicorn: ^56.0.1
+  eslint-plugin-import-x: ^4.16.1
+  eslint-import-resolver-typescript: ^3.10.1
+  eslint-plugin-regexp: ^2.9.0
+  globals: ^15.15.0
+
   # --- Webhook framework adapters (optional peers; type-only + integration tests) ---
   express: ^5.1.0
   "@types/express": ^5.0.1

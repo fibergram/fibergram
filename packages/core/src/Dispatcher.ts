@@ -7,14 +7,17 @@
  *
  * @since 0.1.0
  */
+import { Effect, Stream as StreamNs } from "effect"
+
+import * as EntityManager from "./EntityManager.js"
+
+import type { Dedup } from "./Dedup.js"
+import type { Dialog } from "./Dialog.js"
+import type * as DialogAddress from "./DialogAddress.js"
+import type { DialogStore } from "./DialogStore.js"
 import type { BotApi } from "@fibergram/client"
 import type { Cause, Scope, Stream } from "effect"
-import { Effect, Stream as StreamNs } from "effect"
-import type * as DialogAddress from "./DialogAddress.js"
-import type { Dialog } from "./Dialog.js"
-import type { Dedup } from "./Dedup.js"
-import type { DialogStore } from "./DialogStore.js"
-import * as EntityManager from "./EntityManager.js"
+
 
 /**
  * Options for {@link run}.

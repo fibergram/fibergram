@@ -9,6 +9,7 @@
  * @since 0.1.0
  */
 import { Data, Duration } from "effect"
+
 import type { ResponseParameters } from "./BotApi.js"
 
 /**

@@ -1,8 +1,11 @@
-import { BotApi, TelegramClient } from "@fibergram/client"
-import { Polling } from "@fibergram/polling"
 import { it } from "@effect/vitest"
 import { Effect, Layer, Option, Ref, Stream } from "effect"
 import { describe, expect } from "vitest"
+
+import { TelegramClient } from "@fibergram/client"
+import { Polling } from "@fibergram/polling"
+
+import type { BotApi} from "@fibergram/client";
 
 const update = (id: number, text: string): BotApi.Update => ({
   updateId: id,
@@ -11,7 +14,7 @@ const update = (id: number, text: string): BotApi.Update => ({
 
 // The Bot API has 180 methods; this test only drives `getUpdates`. Fill the rest
 // with a die-if-called default so a stray call fails loudly.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type StubMethod = (params?: any) => Effect.Effect<any, any, any>
 
 const stubClient = (

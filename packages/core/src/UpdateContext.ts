@@ -12,9 +12,10 @@
  *
  * @since 0.1.0
  */
-import type { BotApi } from "@fibergram/client"
 import { Context, Effect, Option, Ref } from "effect"
+
 import type * as DialogAddress from "./DialogAddress.js"
+import type { BotApi } from "@fibergram/client"
 
 /**
  * The ambient facts about the update currently being handled: where it came from

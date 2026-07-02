@@ -10,10 +10,14 @@
  *
  * @since 0.1.0
  */
-import { BotApi, TelegramClient } from "@fibergram/client"
-import type { TelegramError } from "@fibergram/client"
 import { Duration, Effect, Fiber, Option, Ref } from "effect"
+
+import { TelegramClient } from "@fibergram/client"
+
 import * as UpdateContext from "./UpdateContext.js"
+
+import type { TelegramError , BotApi} from "@fibergram/client"
+
 
 /**
  * The chat id of the update being handled.

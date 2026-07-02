@@ -1,8 +1,10 @@
-import type { BotApi } from "@fibergram/client"
-import { Command } from "@fibergram/core"
 import { it } from "@effect/vitest"
 import { Effect, Option, Schema } from "effect"
 import { describe, expect } from "vitest"
+
+import { Command } from "@fibergram/core"
+
+import type { BotApi } from "@fibergram/client"
 
 const msg = (text: string): BotApi.Update => ({
   updateId: 1,

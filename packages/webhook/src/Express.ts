@@ -8,8 +8,8 @@
  *
  * @since 0.1.0
  */
-import type { RequestHandler } from "express"
 import type { Webhook } from "./Webhook.js"
+import type { RequestHandler } from "express"
 
 // express hands the body in whatever shape its parser produced: an object
 // (`express.json()`), a Buffer (`express.raw()`), a string, or nothing. `handle`

@@ -1,9 +1,14 @@
-import type { BotApi, TelegramClient, TelegramError } from "@fibergram/client"
-import { Coroutine, Dedup, Dialog, DialogStore, Dispatcher, UpdateContext } from "@fibergram/core"
+
 import { it } from "@effect/vitest"
 import { Effect, Option, Ref, Schema, Stream } from "effect"
 import { describe, expect } from "vitest"
+
+import { Coroutine, Dedup, DialogStore, Dispatcher, UpdateContext } from "@fibergram/core"
+
 import * as TestTelegram from "./TestTelegram.js"
+
+import type { BotApi, TelegramClient, TelegramError } from "@fibergram/client"
+import type { Dialog} from "@fibergram/core";
 
 // The §4.3 registration wizard, written as a coroutine.
 const Age = Schema.NumberFromString.check(Schema.isBetween({ minimum: 0, maximum: 150 }))
@@ -127,8 +132,7 @@ describe("Coroutine — durable activity (d.run) and divergence guard (§13.2)",
       const tg = yield* TestTelegram.make
       const dice = Coroutine.make("dice", function* (d) {
         const roll = yield* d.run(Effect.succeed(7), Schema.Number)
-        if (roll > 5) yield* d.reply(`high ${roll}`)
-        else yield* d.reply(`low ${roll}`)
+        yield* (roll > 5 ? d.reply(`high ${roll}`) : d.reply(`low ${roll}`));
       })
 
       yield* runWith(dice, tg, [TestTelegram.textUpdate(1, 100, "/play")])

@@ -1,8 +1,9 @@
-import { Webhook } from "@fibergram/webhook"
 import { it } from "@effect/vitest"
 import { Effect, Ref, Stream } from "effect"
 import { HttpServerRequest } from "effect/unstable/http"
 import { describe, expect } from "vitest"
+
+import { Webhook } from "@fibergram/webhook"
 
 // Webhook bodies arrive as raw Bot API JSON - snake_case, decoded to camelCase
 // at the client edge (section 5.3). So the fixtures are snake_case on purpose.

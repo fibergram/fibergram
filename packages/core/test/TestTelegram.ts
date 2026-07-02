@@ -1,5 +1,9 @@
-import { BotApi, TelegramClient } from "@fibergram/client"
 import { Effect, Layer, Ref } from "effect"
+
+import { TelegramClient } from "@fibergram/client"
+
+import type { BotApi} from "@fibergram/client";
+
 
 // The Bot API now has 180 methods; tests only care about a handful. `stubClient`
 // fills the whole `TelegramClientService` from a partial override - any method not
@@ -7,7 +11,7 @@ import { Effect, Layer, Ref } from "effect"
 // pass. Overrides are loosely typed on purpose: pinning them to the exact 180-method
 // interface makes TypeScript deep-compare the giant param types (TS2719). Exported
 // for reuse across test files.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type StubMethod = (params?: any) => Effect.Effect<any, any, any>
 
 export const stubClient = (
@@ -49,7 +53,7 @@ export const make: Effect.Effect<TestTelegram> = Effect.gen(function* () {
           date: 0,
           chat: { id: Number(params.chatId), type: "private" },
           ...(params.text !== undefined ? { text: params.text } : {})
-        } as BotApi.Message
+        }
       }),
     editMessageText: (params) =>
       Effect.gen(function* () {
@@ -59,7 +63,7 @@ export const make: Effect.Effect<TestTelegram> = Effect.gen(function* () {
           date: 0,
           chat: { id: Number(params.chatId), type: "private" },
           ...(params.text !== undefined ? { text: params.text } : {})
-        } as BotApi.Message
+        }
       }),
     answerCallbackQuery: (params) =>
       Ref.update(answered, (all) => [...all, params]).pipe(Effect.as(true)),

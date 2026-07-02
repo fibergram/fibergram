@@ -7,8 +7,8 @@
  *
  * @since 0.1.0
  */
-import type { RouteHandlerMethod } from "fastify"
 import type { Webhook } from "./Webhook.js"
+import type { RouteHandlerMethod } from "fastify"
 
 // fastify's default JSON parser hands `body` as an object; `handle` re-parses via
 // `Schema.fromJsonString`, so normalise back to a raw JSON string.

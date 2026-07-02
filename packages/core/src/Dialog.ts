@@ -10,9 +10,11 @@
  *
  * @since 0.1.0
  */
-import type { BotApi } from "@fibergram/client"
 import { Effect } from "effect"
+
 import * as Decision from "./Decision.js"
+
+import type { BotApi } from "@fibergram/client"
 
 /**
  * A dialog handler: decide what happens for `update` given the current `state`.

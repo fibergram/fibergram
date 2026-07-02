@@ -26,15 +26,18 @@
  *
  * @since 0.1.0
  */
-import { BotApi } from "@fibergram/client"
-import type { Scope, Stream } from "effect"
 import { Effect, Option, Queue, Redacted, Schema, Stream as StreamNs } from "effect"
 import {
   Headers,
-  HttpClientResponse,
   HttpServerRequest,
   HttpServerResponse
 } from "effect/unstable/http"
+
+import { BotApi } from "@fibergram/client"
+
+import type { Scope, Stream } from "effect"
+import type {
+  HttpClientResponse} from "effect/unstable/http";
 
 /**
  * The header Telegram echoes back for every webhook call, carrying the secret
@@ -188,9 +191,9 @@ export const make = (
     const secretToken =
       options?.secretToken === undefined
         ? undefined
-        : Redacted.isRedacted(options.secretToken)
+        : (Redacted.isRedacted(options.secretToken)
           ? Redacted.value(options.secretToken)
-          : options.secretToken
+          : options.secretToken)
 
     const queue = yield* Queue.bounded<BotApi.Update>(capacity)
     // `fromJsonString` folds `JSON.parse` and schema decode into one Effect whose
@@ -207,11 +210,9 @@ export const make = (
       readBody: Effect.Effect<string, E>
     ): Effect.Effect<number> =>
       Effect.gen(function* () {
-        if (secretToken !== undefined) {
-          if (providedToken === null || !constantTimeEqual(providedToken, secretToken)) {
+        if (secretToken !== undefined && (providedToken === null || !constantTimeEqual(providedToken, secretToken))) {
             return 401
           }
-        }
 
         const update = yield* readBody.pipe(Effect.flatMap(decodeUpdate), Effect.option)
         if (Option.isNone(update)) {

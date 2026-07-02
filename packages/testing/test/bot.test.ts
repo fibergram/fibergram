@@ -1,8 +1,10 @@
-import { Chat, Dedup, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
 import { it } from "@effect/vitest"
 import { Effect, Fiber } from "effect"
 import { TestClock } from "effect/testing"
 import { describe, expect } from "vitest"
+
+import { Chat, Dedup, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
+
 import { TestTelegram, Updates } from "../src/index.js"
 
 // An echo bot: replies to every text update with the same text. Its only

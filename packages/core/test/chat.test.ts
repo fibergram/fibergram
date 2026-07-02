@@ -1,9 +1,12 @@
-import type { BotApi, TelegramClient } from "@fibergram/client"
-import { Chat, Dedup, DialogAddress, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
 import { it } from "@effect/vitest"
 import { Effect, Option, Ref, Stream } from "effect"
 import { describe, expect } from "vitest"
+
+import { Chat, Dedup, DialogAddress, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
+
 import * as TestTelegram from "./TestTelegram.js"
+
+import type { BotApi, TelegramClient } from "@fibergram/client"
 
 const runDialog = <S, Ev, E>(
   tg: TestTelegram.TestTelegram,

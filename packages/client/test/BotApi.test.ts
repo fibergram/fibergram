@@ -1,6 +1,7 @@
-import { BotApi, TelegramError } from "@fibergram/client"
 import { Duration, Schema } from "effect"
 import { describe, expect, it } from "vitest"
+
+import { BotApi, TelegramError } from "@fibergram/client"
 
 describe("BotApi naming boundary (section 5.3)", () => {
   it("decodes snake_case wire fields into camelCase", () => {
@@ -117,11 +118,11 @@ describe("TelegramError.fromResponse (section 5.2)", () => {
     const error = TelegramError.fromResponse("sendMessage", {
       errorCode: 400,
       description: "Bad Request: group chat was upgraded to a supergroup chat",
-      parameters: { migrateToChatId: -100123 }
+      parameters: { migrateToChatId: -100_123 }
     })
     expect(error._tag).toBe("ChatMigrated")
     if (error._tag === "ChatMigrated") {
-      expect(error.newChatId).toBe(-100123)
+      expect(error.newChatId).toBe(-100_123)
     }
   })
 

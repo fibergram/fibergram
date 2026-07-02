@@ -1,8 +1,9 @@
-import { TelegramClient } from "@fibergram/client"
 import { it } from "@effect/vitest"
 import { Effect, Layer, Ref } from "effect"
 import { HttpClient, HttpClientResponse } from "effect/unstable/http"
 import { describe, expect } from "vitest"
+
+import { TelegramClient } from "@fibergram/client"
 
 // `Response` (web fetch) is a Node global but not in this project's TS lib (no DOM).
 // Grab it off `globalThis` and reuse the exact type `HttpClientResponse.fromWeb`

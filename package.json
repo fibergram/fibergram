@@ -17,6 +17,7 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
+    "lint:fix": "eslint . --fix",
     "docgen": "turbo run docgen",
     "check:exports": "turbo run check:exports",
     "circular": "madge --circular --extensions ts packages/*/src",
@@ -31,8 +32,16 @@
     "@arethetypeswrong/cli": "catalog:",
     "@changesets/cli": "catalog:",
     "@effect/language-service": "catalog:",
+    "@eslint/js": "catalog:",
+    "eslint": "catalog:",
+    "eslint-import-resolver-typescript": "catalog:",
+    "eslint-plugin-import-x": "catalog:",
+    "eslint-plugin-regexp": "catalog:",
+    "eslint-plugin-unicorn": "catalog:",
+    "globals": "catalog:",
     "madge": "catalog:",
     "turbo": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

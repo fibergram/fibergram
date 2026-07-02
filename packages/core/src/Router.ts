@@ -21,11 +21,13 @@
  *
  * @since 0.1.0
  */
-import type { BotApi } from "@fibergram/client"
 import { Array as Arr, Effect, Option, Pipeable } from "effect"
+
+import * as Dialog from "./Dialog.js"
+
 import type * as CallbackData from "./CallbackData.js"
 import type * as Command from "./Command.js"
-import * as Dialog from "./Dialog.js"
+import type { BotApi } from "@fibergram/client"
 
 /**
  * A single route: given an update, either it applies - yielding the handler

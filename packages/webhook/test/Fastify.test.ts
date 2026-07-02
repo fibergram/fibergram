@@ -1,10 +1,12 @@
-import { Fastify, Webhook } from "@fibergram/webhook"
 import { it } from "@effect/vitest"
 import { Effect, Stream } from "effect"
 import Fastify_ from "fastify"
+import { describe, expect } from "vitest"
+
+import { Fastify, Webhook } from "@fibergram/webhook"
+
 import type { FastifyInstance } from "fastify"
 import type { AddressInfo } from "node:net"
-import { describe, expect } from "vitest"
 
 const updateJson = (id: number, text: string): string =>
   JSON.stringify({

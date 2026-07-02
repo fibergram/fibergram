@@ -12,8 +12,12 @@
  *
  * @since 0.1.0
  */
-import { BotApi, TelegramClient } from "@fibergram/client"
 import { Effect, Layer, Ref } from "effect"
+
+import { TelegramClient } from "@fibergram/client"
+
+import type { BotApi} from "@fibergram/client";
+
 
 /**
  * One captured outbound call: the Bot API `method` name and the `params` the
@@ -72,7 +76,7 @@ const synthMessage = (fallbackMessageId: number, params: unknown): BotApi.Messag
     date: 0,
     chat: { id: chatId, type: "private" },
     ...(p.text !== undefined ? { text: p.text } : {})
-  } as BotApi.Message
+  }
 }
 
 const defaultResult = (
@@ -167,7 +171,7 @@ export const makeWith = (options?: MakeOptions): Effect.Effect<TestTelegram> =>
       {},
       {
         get(_target, prop) {
-          if (typeof prop !== "string") return undefined
+          if (typeof prop !== "string") return
           return (params: unknown): Effect.Effect<unknown> =>
             Effect.flatMap(
               Ref.update(log, (all) => [...all, { method: prop, params }]),

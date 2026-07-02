@@ -1,8 +1,10 @@
-import { TelegramClient } from "@fibergram/client"
-import { Chat, UpdateContext } from "@fibergram/core"
 import { it } from "@effect/vitest"
 import { Effect, Option, Ref } from "effect"
 import { describe, expect } from "vitest"
+
+import { TelegramClient } from "@fibergram/client"
+import { Chat, UpdateContext } from "@fibergram/core"
+
 import { TestTelegram } from "../src/index.js"
 
 const envFor = (chatId: number) =>

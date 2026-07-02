@@ -10,7 +10,9 @@
  *
  * @since 0.1.0
  */
-import { Context, Effect, HashMap, Layer, Option, Ref } from "effect"
+import { Context, Effect, HashMap, Layer, Ref } from "effect"
+
+import type { Option} from "effect";
 
 /**
  * The persistence port: load and save the folded state for a dialog address key.

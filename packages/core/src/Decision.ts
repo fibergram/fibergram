@@ -6,7 +6,7 @@
  *
  * @since 0.1.0
  */
-import { Effect } from "effect"
+import type { Effect } from "effect"
 
 /**
  * The result of handling one update: `events` deterministically fold into the

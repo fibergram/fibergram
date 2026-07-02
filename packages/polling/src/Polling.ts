@@ -16,10 +16,13 @@
  *
  * @since 0.1.0
  */
-import type { BotApi } from "@fibergram/client"
-import { TelegramClient } from "@fibergram/client"
-import type { Scope, Stream } from "effect"
 import { Duration, Effect, Option, Queue, Ref, Stream as StreamNs } from "effect"
+
+import { TelegramClient } from "@fibergram/client"
+
+import type { BotApi } from "@fibergram/client"
+import type { Scope, Stream } from "effect"
+
 
 const emptyUpdates: ReadonlyArray<BotApi.Update> = []
 
@@ -142,7 +145,7 @@ export const make = (
 
         // Commit offset only after the whole batch is enqueued.
         const highest = updates.reduce(
-          (max, update) => (update.updateId > max ? update.updateId : max),
+          (max, update) => (Math.max(update.updateId, max)),
           -1
         )
         if (highest >= 0) {

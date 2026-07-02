@@ -6,8 +6,9 @@
  *
  * @since 0.1.0
  */
-import { BotApi } from "@fibergram/client"
 import { Stream } from "effect"
+
+import type { BotApi } from "@fibergram/client"
 
 const tester = (fromId: number): BotApi.User => ({
   id: fromId,
