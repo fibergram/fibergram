@@ -1,7 +1,7 @@
 ---
 
 title: index.ts
-nav_order: 8
+nav_order: 12
 parent: Modules
 ---
 
@@ -19,6 +19,10 @@ Added in v0.1.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [exports](#exports)
+  - [From "./CallbackData.js"](#from-callbackdatajs)
+  - [From "./Chat.js"](#from-chatjs)
+  - [From "./Command.js"](#from-commandjs)
+  - [From "./Coroutine.js"](#from-coroutinejs)
   - [From "./Decision.js"](#from-decisionjs)
   - [From "./Dedup.js"](#from-dedupjs)
   - [From "./Dialog.js"](#from-dialogjs)
@@ -27,10 +31,59 @@ Added in v0.1.0
   - [From "./Dispatcher.js"](#from-dispatcherjs)
   - [From "./EntityManager.js"](#from-entitymanagerjs)
   - [From "./Retry.js"](#from-retryjs)
+  - [From "./UpdateContext.js"](#from-updatecontextjs)
 
 ---
 
 # exports
+
+## From "./CallbackData.js"
+
+Typed `callback_data` codec plus the optional overflow store port.
+
+**Signature**
+
+```ts
+export * as CallbackData from "./CallbackData.js"
+```
+
+Added in v0.1.0
+
+## From "./Chat.js"
+
+Ctx-less accessor helpers over the current update (`reply`, `editLast`, ...).
+
+**Signature**
+
+```ts
+export * as Chat from "./Chat.js"
+```
+
+Added in v0.1.0
+
+## From "./Command.js"
+
+Typed slash commands with `Schema`-decoded arguments.
+
+**Signature**
+
+```ts
+export * as Command from "./Command.js"
+```
+
+Added in v0.1.0
+
+## From "./Coroutine.js"
+
+The coroutine DSL that elaborates into the `Dialog` decider.
+
+**Signature**
+
+```ts
+export * as Coroutine from "./Coroutine.js"
+```
+
+Added in v0.1.0
 
 ## From "./Decision.js"
 
@@ -127,6 +180,18 @@ Retry that honours Telegram's `retry_after`.
 
 ```ts
 export * as Retry from "./Retry.js"
+```
+
+Added in v0.1.0
+
+## From "./UpdateContext.js"
+
+The per-update ambient context (`UpdateEnv` + reference) that dissolves `ctx`.
+
+**Signature**
+
+```ts
+export * as UpdateContext from "./UpdateContext.js"
 ```
 
 Added in v0.1.0

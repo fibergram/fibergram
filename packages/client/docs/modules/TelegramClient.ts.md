@@ -144,6 +144,13 @@ export interface TelegramClientService {
     params?: BotApi.GetUpdatesParams
   ) => Effect.Effect<ReadonlyArray<BotApi.Update>, TelegramError.TelegramError>
   readonly sendMessage: (params: BotApi.SendMessageParams) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>
+  readonly editMessageText: (
+    params: BotApi.EditMessageTextParams
+  ) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>
+  readonly answerCallbackQuery: (
+    params: BotApi.AnswerCallbackQueryParams
+  ) => Effect.Effect<boolean, TelegramError.TelegramError>
+  readonly sendChatAction: (params: BotApi.SendChatActionParams) => Effect.Effect<boolean, TelegramError.TelegramError>
 }
 ```
 

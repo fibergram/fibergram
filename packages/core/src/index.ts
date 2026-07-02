@@ -62,3 +62,38 @@ export * as Dispatcher from "./Dispatcher.js"
  * @since 0.1.0
  */
 export * as Retry from "./Retry.js"
+
+/**
+ * The per-update ambient context (`UpdateEnv` + reference) that dissolves `ctx`.
+ *
+ * @since 0.1.0
+ */
+export * as UpdateContext from "./UpdateContext.js"
+
+/**
+ * Ctx-less accessor helpers over the current update (`reply`, `editLast`, ...).
+ *
+ * @since 0.1.0
+ */
+export * as Chat from "./Chat.js"
+
+/**
+ * Typed `callback_data` codec plus the optional overflow store port.
+ *
+ * @since 0.1.0
+ */
+export * as CallbackData from "./CallbackData.js"
+
+/**
+ * Typed slash commands with `Schema`-decoded arguments.
+ *
+ * @since 0.1.0
+ */
+export * as Command from "./Command.js"
+
+/**
+ * The coroutine DSL that elaborates into the `Dialog` decider.
+ *
+ * @since 0.1.0
+ */
+export * as Coroutine from "./Coroutine.js"

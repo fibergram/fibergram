@@ -51,7 +51,8 @@ export const toKey = (address: DialogAddress): string =>
   `${address.kind}:${address.chatId}:${address.threadId ?? ""}:${address.fromId ?? ""}`
 
 /**
- * The message an update carries, if any (`message` or `editedMessage`).
+ * The message an update carries, if any (`message`, `editedMessage`, or the
+ * message a `callbackQuery` was attached to).
  *
  * @category combinators
  * @since 0.1.0
@@ -61,7 +62,23 @@ export const messageOf = (update: BotApi.Update): Option.Option<BotApi.Message> 
     ? Option.some(update.message)
     : update.editedMessage !== undefined
       ? Option.some(update.editedMessage)
-      : Option.none()
+      : update.callbackQuery?.message !== undefined
+        ? Option.some(update.callbackQuery.message)
+        : Option.none()
+
+/**
+ * The sender of an update, if any - from a message, an edited message, or a
+ * callback query (whose `from` is always present).
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const senderOf = (update: BotApi.Update): Option.Option<BotApi.User> => {
+  const user = update.message?.from ??
+    update.editedMessage?.from ??
+    update.callbackQuery?.from
+  return Option.fromNullishOr(user)
+}
 
 /**
  * The default per-chat extractor. Addresses by `chatId` (plus Forum Topic
@@ -99,11 +116,9 @@ export const byChat = (kind = "default"): KeyExtractor =>
 export const byUser = (kind = "default"): KeyExtractor =>
   (update) =>
     Option.flatMap(messageOf(update), (message) =>
-      message.from === undefined
-        ? Option.none()
-        : Option.some({
-          chatId: message.chat.id,
-          fromId: message.from.id,
-          ...(message.messageThreadId !== undefined ? { threadId: message.messageThreadId } : {}),
-          kind
-        }))
+      Option.map(senderOf(update), (sender) => ({
+        chatId: message.chat.id,
+        fromId: sender.id,
+        ...(message.messageThreadId !== undefined ? { threadId: message.messageThreadId } : {}),
+        kind
+      })))

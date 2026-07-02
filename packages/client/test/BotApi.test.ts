@@ -46,6 +46,57 @@ describe("BotApi naming boundary (section 5.3)", () => {
     })
     expect(update).toEqual({ updateId: 1 })
   })
+
+  it("decodes a callback_query update into camelCase", () => {
+    const update = Schema.decodeUnknownSync(BotApi.Update)({
+      update_id: 8,
+      callback_query: {
+        id: "cb1",
+        from: { id: 5, is_bot: false, first_name: "Ada" },
+        message: { message_id: 2, date: 0, chat: { id: 42, type: "private" } },
+        data: "vote:1"
+      }
+    })
+
+    expect(update.callbackQuery?.id).toBe("cb1")
+    expect(update.callbackQuery?.from.firstName).toBe("Ada")
+    expect(update.callbackQuery?.message?.chat.id).toBe(42)
+    expect(update.callbackQuery?.data).toBe("vote:1")
+  })
+
+  it("encodes an inline keyboard reply_markup back into snake_case", () => {
+    const encoded = Schema.encodeUnknownSync(BotApi.SendMessageParams)({
+      chatId: 42,
+      text: "pick",
+      replyMarkup: {
+        inlineKeyboard: [[{ text: "Yes", callbackData: "y" }]]
+      }
+    })
+
+    expect(encoded).toEqual({
+      chat_id: 42,
+      text: "pick",
+      reply_markup: { inline_keyboard: [[{ text: "Yes", callback_data: "y" }]] }
+    })
+  })
+
+  it("encodes editMessageText and answerCallbackQuery params to snake_case", () => {
+    expect(
+      Schema.encodeUnknownSync(BotApi.EditMessageTextParams)({
+        chatId: 1,
+        messageId: 10,
+        text: "edited"
+      })
+    ).toEqual({ chat_id: 1, message_id: 10, text: "edited" })
+
+    expect(
+      Schema.encodeUnknownSync(BotApi.AnswerCallbackQueryParams)({
+        callbackQueryId: "cb1",
+        text: "ok",
+        showAlert: true
+      })
+    ).toEqual({ callback_query_id: "cb1", text: "ok", show_alert: true })
+  })
 })
 
 describe("TelegramError.fromResponse (section 5.2)", () => {

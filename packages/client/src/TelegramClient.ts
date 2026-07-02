@@ -17,8 +17,12 @@ import * as TelegramError from "./TelegramError.js"
 const decodeResponse = Schema.decodeUnknownEffect(BotApi.ApiResponse)
 const decodeUpdates = Schema.decodeUnknownEffect(Schema.Array(BotApi.Update))
 const decodeMessage = Schema.decodeUnknownEffect(BotApi.Message)
+const decodeBoolean = Schema.decodeUnknownEffect(Schema.Boolean)
 const encodeGetUpdates = Schema.encodeUnknownEffect(BotApi.GetUpdatesParams)
 const encodeSendMessage = Schema.encodeUnknownEffect(BotApi.SendMessageParams)
+const encodeEditMessageText = Schema.encodeUnknownEffect(BotApi.EditMessageTextParams)
+const encodeAnswerCallbackQuery = Schema.encodeUnknownEffect(BotApi.AnswerCallbackQueryParams)
+const encodeSendChatAction = Schema.encodeUnknownEffect(BotApi.SendChatActionParams)
 
 /**
  * The service shape: the subset of the Bot API fibergram currently needs. Each
@@ -35,6 +39,15 @@ export interface TelegramClientService {
   readonly sendMessage: (
     params: BotApi.SendMessageParams
   ) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>
+  readonly editMessageText: (
+    params: BotApi.EditMessageTextParams
+  ) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>
+  readonly answerCallbackQuery: (
+    params: BotApi.AnswerCallbackQueryParams
+  ) => Effect.Effect<boolean, TelegramError.TelegramError>
+  readonly sendChatAction: (
+    params: BotApi.SendChatActionParams
+  ) => Effect.Effect<boolean, TelegramError.TelegramError>
 }
 
 /**
@@ -141,7 +154,27 @@ export const make = (
         (body) => request("sendMessage", decodeMessage, body)
       )
 
-    return { getUpdates, sendMessage }
+    const editMessageText: TelegramClientService["editMessageText"] = (params) =>
+      Effect.flatMap(
+        encodeEditMessageText(params).pipe(Effect.mapError(transport("editMessageText"))),
+        (body) => request("editMessageText", decodeMessage, body)
+      )
+
+    const answerCallbackQuery: TelegramClientService["answerCallbackQuery"] = (params) =>
+      Effect.flatMap(
+        encodeAnswerCallbackQuery(params).pipe(
+          Effect.mapError(transport("answerCallbackQuery"))
+        ),
+        (body) => request("answerCallbackQuery", decodeBoolean, body)
+      )
+
+    const sendChatAction: TelegramClientService["sendChatAction"] = (params) =>
+      Effect.flatMap(
+        encodeSendChatAction(params).pipe(Effect.mapError(transport("sendChatAction"))),
+        (body) => request("sendChatAction", decodeBoolean, body)
+      )
+
+    return { getUpdates, sendMessage, editMessageText, answerCallbackQuery, sendChatAction }
   })
 
 /**

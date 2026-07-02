@@ -115,6 +115,105 @@ export const Message = Schema.Struct({
 export type Message = Schema.Schema.Type<typeof Message>
 
 /**
+ * One button of an inline keyboard. `callbackData` is the ≤64-byte payload
+ * Telegram echoes back in a {@link CallbackQuery}; fibergram encodes typed values
+ * into it via `CallbackData` (design section 5.3).
+ *
+ * @example
+ * import { BotApi } from "@fibergram/client"
+ * import { Schema } from "effect"
+ *
+ * const button = Schema.decodeUnknownSync(BotApi.InlineKeyboardButton)({
+ *   text: "Vote",
+ *   callback_data: "vote:1"
+ * })
+ *
+ * @category schemas
+ * @since 0.1.0
+ */
+export const InlineKeyboardButton = Schema.Struct({
+  text: Schema.String,
+  callbackData: Schema.optionalKey(Schema.String),
+  url: Schema.optionalKey(Schema.String)
+}).pipe(
+  Schema.encodeKeys({
+    callbackData: "callback_data"
+  })
+)
+
+/**
+ * Decoded `camelCase` inline keyboard button.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type InlineKeyboardButton = Schema.Schema.Type<typeof InlineKeyboardButton>
+
+/**
+ * An inline keyboard: rows of {@link InlineKeyboardButton}. Attach it to
+ * `sendMessage`/`editMessageText` via `replyMarkup`.
+ *
+ * @example
+ * import { BotApi } from "@fibergram/client"
+ * import { Schema } from "effect"
+ *
+ * const markup = Schema.decodeUnknownSync(BotApi.InlineKeyboardMarkup)({
+ *   inline_keyboard: [[{ text: "Yes", callback_data: "y" }]]
+ * })
+ *
+ * @category schemas
+ * @since 0.1.0
+ */
+export const InlineKeyboardMarkup = Schema.Struct({
+  inlineKeyboard: Schema.Array(Schema.Array(InlineKeyboardButton))
+}).pipe(
+  Schema.encodeKeys({
+    inlineKeyboard: "inline_keyboard"
+  })
+)
+
+/**
+ * Decoded `camelCase` inline keyboard markup.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type InlineKeyboardMarkup = Schema.Schema.Type<typeof InlineKeyboardMarkup>
+
+/**
+ * An incoming callback query - the result of a user tapping an inline button.
+ * `data` carries the button's `callbackData` verbatim; fibergram routes on it via
+ * `CallbackData` (design section 5.3).
+ *
+ * @example
+ * import { BotApi } from "@fibergram/client"
+ * import { Schema } from "effect"
+ *
+ * const query = Schema.decodeUnknownSync(BotApi.CallbackQuery)({
+ *   id: "abc",
+ *   from: { id: 1, is_bot: false, first_name: "Ada" },
+ *   data: "vote:1"
+ * })
+ *
+ * @category schemas
+ * @since 0.1.0
+ */
+export const CallbackQuery = Schema.Struct({
+  id: Schema.String,
+  from: User,
+  message: Schema.optionalKey(Message),
+  data: Schema.optionalKey(Schema.String)
+})
+
+/**
+ * Decoded `camelCase` callback query.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type CallbackQuery = Schema.Schema.Type<typeof CallbackQuery>
+
+/**
  * A single incoming update. Only the fields the dispatcher routes on are
  * modelled; unknown fields decode away silently (forward compatibility, section 5.3).
  *
@@ -133,11 +232,13 @@ export type Message = Schema.Schema.Type<typeof Message>
 export const Update = Schema.Struct({
   updateId: Schema.Number,
   message: Schema.optionalKey(Message),
-  editedMessage: Schema.optionalKey(Message)
+  editedMessage: Schema.optionalKey(Message),
+  callbackQuery: Schema.optionalKey(CallbackQuery)
 }).pipe(
   Schema.encodeKeys({
     updateId: "update_id",
-    editedMessage: "edited_message"
+    editedMessage: "edited_message",
+    callbackQuery: "callback_query"
   })
 )
 
@@ -243,12 +344,14 @@ export const SendMessageParams = Schema.Struct({
   chatId: Schema.Union([Schema.Number, Schema.String]),
   text: Schema.String,
   messageThreadId: Schema.optionalKey(Schema.Number),
-  replyToMessageId: Schema.optionalKey(Schema.Number)
+  replyToMessageId: Schema.optionalKey(Schema.Number),
+  replyMarkup: Schema.optionalKey(InlineKeyboardMarkup)
 }).pipe(
   Schema.encodeKeys({
     chatId: "chat_id",
     messageThreadId: "message_thread_id",
-    replyToMessageId: "reply_to_message_id"
+    replyToMessageId: "reply_to_message_id",
+    replyMarkup: "reply_markup"
   })
 )
 
@@ -259,3 +362,114 @@ export const SendMessageParams = Schema.Struct({
  * @since 0.1.0
  */
 export type SendMessageParams = Schema.Schema.Type<typeof SendMessageParams>
+
+/**
+ * `editMessageText` request parameters. Edits an existing message in place - the
+ * first-class way a dialog updates its "current prompt" instead of spamming new
+ * messages (design section 13.6). Encoded to `snake_case` before hitting the API.
+ *
+ * @example
+ * import { BotApi } from "@fibergram/client"
+ * import { Schema } from "effect"
+ *
+ * const encoded = Schema.encodeUnknownSync(BotApi.EditMessageTextParams)({
+ *   chatId: 1,
+ *   messageId: 10,
+ *   text: "edited"
+ * })
+ *
+ * @category schemas
+ * @since 0.1.0
+ */
+export const EditMessageTextParams = Schema.Struct({
+  chatId: Schema.Union([Schema.Number, Schema.String]),
+  messageId: Schema.Number,
+  text: Schema.String,
+  replyMarkup: Schema.optionalKey(InlineKeyboardMarkup)
+}).pipe(
+  Schema.encodeKeys({
+    chatId: "chat_id",
+    messageId: "message_id",
+    replyMarkup: "reply_markup"
+  })
+)
+
+/**
+ * `editMessageText` parameters (`camelCase`).
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type EditMessageTextParams = Schema.Schema.Type<typeof EditMessageTextParams>
+
+/**
+ * `answerCallbackQuery` request parameters. Acknowledges a tapped inline button
+ * (stops the client's loading spinner), optionally with a toast/alert. Encoded to
+ * `snake_case` before hitting the API.
+ *
+ * @example
+ * import { BotApi } from "@fibergram/client"
+ * import { Schema } from "effect"
+ *
+ * const encoded = Schema.encodeUnknownSync(BotApi.AnswerCallbackQueryParams)({
+ *   callbackQueryId: "abc",
+ *   text: "Saved"
+ * })
+ *
+ * @category schemas
+ * @since 0.1.0
+ */
+export const AnswerCallbackQueryParams = Schema.Struct({
+  callbackQueryId: Schema.String,
+  text: Schema.optionalKey(Schema.String),
+  showAlert: Schema.optionalKey(Schema.Boolean)
+}).pipe(
+  Schema.encodeKeys({
+    callbackQueryId: "callback_query_id",
+    showAlert: "show_alert"
+  })
+)
+
+/**
+ * `answerCallbackQuery` parameters (`camelCase`).
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type AnswerCallbackQueryParams = Schema.Schema.Type<typeof AnswerCallbackQueryParams>
+
+/**
+ * `sendChatAction` request parameters. Shows a transient status (e.g. `"typing"`)
+ * in the chat - the primitive behind `Chat.withTyping` (design section 5.5). Encoded
+ * to `snake_case` before hitting the API.
+ *
+ * @example
+ * import { BotApi } from "@fibergram/client"
+ * import { Schema } from "effect"
+ *
+ * const encoded = Schema.encodeUnknownSync(BotApi.SendChatActionParams)({
+ *   chatId: 1,
+ *   action: "typing"
+ * })
+ *
+ * @category schemas
+ * @since 0.1.0
+ */
+export const SendChatActionParams = Schema.Struct({
+  chatId: Schema.Union([Schema.Number, Schema.String]),
+  action: Schema.String,
+  messageThreadId: Schema.optionalKey(Schema.Number)
+}).pipe(
+  Schema.encodeKeys({
+    chatId: "chat_id",
+    messageThreadId: "message_thread_id"
+  })
+)
+
+/**
+ * `sendChatAction` parameters (`camelCase`).
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type SendChatActionParams = Schema.Schema.Type<typeof SendChatActionParams>

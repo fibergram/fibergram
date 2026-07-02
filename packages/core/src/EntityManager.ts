@@ -17,6 +17,7 @@ import * as DialogAddress from "./DialogAddress.js"
 import { Dedup } from "./Dedup.js"
 import type { Dialog } from "./Dialog.js"
 import { DialogStore } from "./DialogStore.js"
+import * as UpdateContext from "./UpdateContext.js"
 
 /**
  * The manager's public surface: hand it an update and it routes, dedups, orders
@@ -100,8 +101,15 @@ export const make = <State, Event, E, R>(
           onNone: () => options.dialog.initialState,
           onSome: (persisted) => persisted as State
         })
-        const decision = yield* options.dialog.decide(state, update)
-        yield* Effect.forEach(decision.effects, (effect) => effect, { discard: true })
+        // Stamp the per-update ambient env so `Chat.*` accessors resolve to this
+        // chat, both while deciding and while running the resulting effects (section 5.1).
+        const env = yield* UpdateContext.fromAddress(address, update)
+        const decision = yield* options.dialog.decide(state, update).pipe(
+          UpdateContext.provide(env)
+        )
+        yield* Effect.forEach(decision.effects, (effect) => effect, { discard: true }).pipe(
+          UpdateContext.provide(env)
+        )
         const nextState = decision.events.reduce(options.dialog.reduce, state)
         yield* store.save(key, nextState)
       })

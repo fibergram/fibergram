@@ -23,7 +23,18 @@ const makeRecorder: Effect.Effect<Recorder> = Effect.gen(function* () {
         ...(params.text !== undefined ? { text: params.text } : {})
       }
       return Ref.update(sent, (all) => [...all, params]).pipe(Effect.as(reply))
-    }
+    },
+    editMessageText: (params) => {
+      const edited: BotApi.Message = {
+        messageId: params.messageId,
+        date: 0,
+        chat: { id: Number(params.chatId), type: "private" },
+        text: params.text
+      }
+      return Effect.succeed(edited)
+    },
+    answerCallbackQuery: () => Effect.succeed(true),
+    sendChatAction: () => Effect.succeed(true)
   }
   return { sent, layer: Layer.succeed(TelegramClient.TelegramClient, service) }
 })

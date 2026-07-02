@@ -17,6 +17,9 @@ describe("Polling ingestion (section 7 - offset management)", () => {
 
       const service: TelegramClient.TelegramClientService = {
         sendMessage: () => Effect.die("sendMessage is not used by this test"),
+        editMessageText: () => Effect.die("editMessageText is not used by this test"),
+        answerCallbackQuery: () => Effect.die("answerCallbackQuery is not used by this test"),
+        sendChatAction: () => Effect.die("sendChatAction is not used by this test"),
         getUpdates: (params) =>
           Effect.gen(function* () {
             yield* Ref.update(requestedOffsets, (all) => [...all, params?.offset])

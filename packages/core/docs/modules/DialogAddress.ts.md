@@ -1,7 +1,7 @@
 ---
 
 title: DialogAddress.ts
-nav_order: 4
+nav_order: 8
 parent: Modules
 ---
 
@@ -22,6 +22,7 @@ Added in v0.1.0
 
 - [combinators](#combinators)
   - [messageOf](#messageof)
+  - [senderOf](#senderof)
   - [toKey](#tokey)
 - [constructors](#constructors)
   - [byChat](#bychat)
@@ -36,12 +37,26 @@ Added in v0.1.0
 
 ## messageOf
 
-The message an update carries, if any (`message` or `editedMessage`).
+The message an update carries, if any (`message`, `editedMessage`, or the
+message a `callbackQuery` was attached to).
 
 **Signature**
 
 ```ts
 export declare const messageOf: (update: BotApi.Update) => Option.Option<BotApi.Message>
+```
+
+Added in v0.1.0
+
+## senderOf
+
+The sender of an update, if any - from a message, an edited message, or a
+callback query (whose `from` is always present).
+
+**Signature**
+
+```ts
+export declare const senderOf: (update: BotApi.Update) => Option.Option<BotApi.User>
 ```
 
 Added in v0.1.0
