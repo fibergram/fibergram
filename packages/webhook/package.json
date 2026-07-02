@@ -15,6 +15,16 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./express": {
+      "types": "./dist/Express.d.ts",
+      "import": "./dist/Express.js",
+      "default": "./dist/Express.js"
+    },
+    "./fastify": {
+      "types": "./dist/Fastify.d.ts",
+      "import": "./dist/Fastify.js",
+      "default": "./dist/Fastify.js"
     }
   },
   "main": "./dist/index.js",
@@ -35,10 +45,26 @@
     "@fibergram/client": "workspace:^",
     "@fibergram/core": "workspace:^"
   },
+  "peerDependencies": {
+    "express": "^5.0.0",
+    "fastify": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",
     "@effect/docgen": "catalog:",
     "@effect/vitest": "catalog:",
+    "@types/express": "catalog:",
+    "@types/node": "catalog:",
+    "express": "catalog:",
+    "fastify": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

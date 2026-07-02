@@ -1,20 +1,31 @@
 /**
- * `@fibergram/webhook` - Ingestion Layer: HttpServer + secret-token validation, framework-agnostic WebhookHandler
+ * `@fibergram/webhook` - webhook ingestion as a second producer into the shared
+ * `Queue<Update>`. A framework-agnostic `handle(Request) => Promise<Response>`
+ * with secret-token validation and fast-ack (design section 7.1).
  *
- * Package skeleton: the public API lands incrementally (see docs-ai/fibergram-design.md).
- *
- * @since 0.0.0
+ * @since 0.1.0
  */
 
 /**
- * Skeleton package version. Placeholder until the first real export.
+ * The `Webhook` transport: `Webhook.make`, the `Webhook` handle/stream pair and
+ * its options.
  *
- * @example
- * import { version } from "@fibergram/webhook"
- *
- * console.log(version)
- *
- * @category constants
- * @since 0.0.0
+ * @since 0.1.0
  */
-export const version = "0.0.0" as const
+export * as Webhook from "./Webhook.js"
+
+/**
+ * Express adapter (`@fibergram/webhook/express`): `Express.middleware` bridging an
+ * express `RequestHandler` to `Webhook.handle`.
+ *
+ * @since 0.1.0
+ */
+export * as Express from "./Express.js"
+
+/**
+ * Fastify adapter (`@fibergram/webhook/fastify`): `Fastify.handler` bridging a
+ * fastify route handler to `Webhook.handle`.
+ *
+ * @since 0.1.0
+ */
+export * as Fastify from "./Fastify.js"

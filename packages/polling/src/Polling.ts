@@ -9,14 +9,36 @@
  * by `updateId` (design section 13.5) makes that reprocessing harmless - at-least-once
  * fetch + idempotent processing ~ exactly-once.
  *
+ * **Durability.** By default the offset lives in an in-memory `Ref` and resets on
+ * restart (Telegram still redelivers its ~24h backlog, so nothing is lost - it is
+ * merely refetched). Pass an {@link OffsetStore} to persist the committed offset
+ * across restarts and resume exactly where the last run stopped.
+ *
  * @since 0.1.0
  */
 import type { BotApi } from "@fibergram/client"
 import { TelegramClient } from "@fibergram/client"
 import type { Scope, Stream } from "effect"
-import { Duration, Effect, Queue, Ref, Stream as StreamNs } from "effect"
+import { Duration, Effect, Option, Queue, Ref, Stream as StreamNs } from "effect"
 
 const emptyUpdates: ReadonlyArray<BotApi.Update> = []
+
+/**
+ * A durable home for the polling offset (design section 7, M4). Implement it over
+ * whatever store survives a restart (a file, Redis, a row) and pass it to
+ * {@link make}; `load` seeds the initial offset on start, `commit` persists
+ * `highest updateId + 1` after each batch is enqueued. Both must be `R = never` -
+ * close over your store handle.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface OffsetStore {
+  /** The last committed offset, or `None` on a first run. */
+  readonly load: Effect.Effect<Option.Option<number>>
+  /** Persist the next offset (`highest updateId + 1`) after a batch is enqueued. */
+  readonly commit: (offset: number) => Effect.Effect<void>
+}
 
 /**
  * Options for {@link make}.
@@ -35,6 +57,8 @@ export interface MakeOptions {
   readonly errorBackoff?: Duration.Duration
   /** Bounded queue capacity; full queue back-pressures polling (default 1024). */
   readonly capacity?: number
+  /** Persist the offset across restarts. Omit for an in-memory offset (default). */
+  readonly offsetStore?: OffsetStore
 }
 
 /**
@@ -77,9 +101,15 @@ export const make = (
     const errorBackoff = options?.errorBackoff ?? Duration.seconds(1)
     const capacity = options?.capacity ?? 1024
     const allowedUpdates = options?.allowedUpdates
+    const offsetStore = options?.offsetStore
 
     const queue = yield* Queue.bounded<BotApi.Update>(capacity)
-    const offsetRef = yield* Ref.make<number | undefined>(undefined)
+    // Resume from the persisted offset when a store is provided; otherwise start
+    // fresh and let Telegram's backlog redelivery + dedup cover the gap.
+    const initialOffset = offsetStore === undefined
+      ? undefined
+      : Option.getOrUndefined(yield* offsetStore.load)
+    const offsetRef = yield* Ref.make<number | undefined>(initialOffset)
 
     const loop = Effect.forever(
       Effect.gen(function* () {
@@ -116,7 +146,16 @@ export const make = (
           -1
         )
         if (highest >= 0) {
-          yield* Ref.set(offsetRef, highest + 1)
+          const next = highest + 1
+          yield* Ref.set(offsetRef, next)
+          // Persist after enqueue; a commit defect is logged, not fatal - the
+          // offset stays and the next batch re-commits, dedup absorbs the overlap.
+          if (offsetStore !== undefined) {
+            yield* offsetStore.commit(next).pipe(
+              Effect.catchCause((cause) =>
+                Effect.logWarning("fibergram: offset commit failed", cause))
+            )
+          }
         }
       })
     )
