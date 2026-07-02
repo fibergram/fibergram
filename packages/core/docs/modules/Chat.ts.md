@@ -79,6 +79,19 @@ export declare const from: Effect.Effect<
     readonly firstName: string
     readonly lastName?: string | undefined
     readonly username?: string | undefined
+    readonly languageCode?: string | undefined
+    readonly isPremium?: boolean | undefined
+    readonly addedToAttachmentMenu?: boolean | undefined
+    readonly canJoinGroups?: boolean | undefined
+    readonly canReadAllGroupMessages?: boolean | undefined
+    readonly supportsGuestQueries?: boolean | undefined
+    readonly supportsInlineQueries?: boolean | undefined
+    readonly canConnectToBusiness?: boolean | undefined
+    readonly hasMainWebApp?: boolean | undefined
+    readonly hasTopicsEnabled?: boolean | undefined
+    readonly allowsUsersToCreateTopics?: boolean | undefined
+    readonly canManageBots?: boolean | undefined
+    readonly supportsJoinRequestQueries?: boolean | undefined
   }>,
   never,
   never

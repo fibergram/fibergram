@@ -28,14 +28,14 @@ describe("BotApi naming boundary (section 5.3)", () => {
       chatId: 42,
       text: "yo",
       messageThreadId: 9,
-      replyToMessageId: 3
+      replyParameters: { messageId: 3 }
     })
 
     expect(encoded).toEqual({
       chat_id: 42,
       text: "yo",
       message_thread_id: 9,
-      reply_to_message_id: 3
+      reply_parameters: { message_id: 3 }
     })
   })
 
@@ -53,6 +53,7 @@ describe("BotApi naming boundary (section 5.3)", () => {
       callback_query: {
         id: "cb1",
         from: { id: 5, is_bot: false, first_name: "Ada" },
+        chat_instance: "ci-42",
         message: { message_id: 2, date: 0, chat: { id: 42, type: "private" } },
         data: "vote:1"
       }

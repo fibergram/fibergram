@@ -119,7 +119,7 @@ export const reply = (
       text,
       ...(Option.isSome(env.threadId) ? { messageThreadId: env.threadId.value } : {}),
       ...(options?.replyToMessageId !== undefined
-        ? { replyToMessageId: options.replyToMessageId }
+        ? { replyParameters: { messageId: options.replyToMessageId } }
         : {}),
       ...(options?.replyMarkup !== undefined ? { replyMarkup: options.replyMarkup } : {})
     })
@@ -166,12 +166,16 @@ export const editLast = (
       return yield* reply(text, options)
     }
     const tg = yield* TelegramClient.TelegramClient
-    return yield* tg.editMessageText({
+    // `editMessageText` returns `Message | true` per the Bot API - `true` only for
+    // inline messages. `editLast` always targets a chat message (chatId + messageId),
+    // so the result is always the edited `Message`.
+    const edited = yield* tg.editMessageText({
       chatId: env.chatId,
       messageId: last.value,
       text,
       ...(options?.replyMarkup !== undefined ? { replyMarkup: options.replyMarkup } : {})
     })
+    return edited as BotApi.Message
   })
 
 /**

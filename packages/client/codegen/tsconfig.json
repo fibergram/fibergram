@@ -1,0 +1,18 @@
+{
+  // Scopes Node types to the codegen script (run via `node --experimental-strip-types`),
+  // which lives outside the strict `src` build. Keeps `node:fs`/`import.meta` resolving in
+  // the editor without leaking Node globals into the published package.
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "rootDir": ".",
+    "types": ["node"],
+    // The generator is split across sibling `.ts` modules imported by explicit
+    // `.ts` specifier (Node runs it via `--experimental-strip-types`, no bundler);
+    // `erasableSyntaxOnly` keeps every module strip-safe (no enums/namespaces/etc).
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["*.ts"]
+}

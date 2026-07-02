@@ -3,6 +3,7 @@ import { Dedup, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
 import { it } from "@effect/vitest"
 import { Effect, Layer, Ref, Stream } from "effect"
 import { describe, expect } from "vitest"
+import { stubClient } from "./TestTelegram.js"
 
 // --- Test doubles -----------------------------------------------------------
 
@@ -13,29 +14,29 @@ interface Recorder {
 
 const makeRecorder: Effect.Effect<Recorder> = Effect.gen(function* () {
   const sent = yield* Ref.make<ReadonlyArray<BotApi.SendMessageParams>>([])
-  const service: TelegramClient.TelegramClientService = {
+  const service = stubClient({
     getUpdates: () => Effect.succeed<ReadonlyArray<BotApi.Update>>([]),
     sendMessage: (params) => {
-      const reply: BotApi.Message = {
+      const reply = {
         messageId: 1,
         date: 0,
         chat: { id: Number(params.chatId), type: "private" },
         ...(params.text !== undefined ? { text: params.text } : {})
-      }
+      } as BotApi.Message
       return Ref.update(sent, (all) => [...all, params]).pipe(Effect.as(reply))
     },
     editMessageText: (params) => {
-      const edited: BotApi.Message = {
-        messageId: params.messageId,
+      const edited = {
+        messageId: params.messageId ?? 0,
         date: 0,
         chat: { id: Number(params.chatId), type: "private" },
-        text: params.text
-      }
+        ...(params.text !== undefined ? { text: params.text } : {})
+      } as BotApi.Message
       return Effect.succeed(edited)
     },
     answerCallbackQuery: () => Effect.succeed(true),
     sendChatAction: () => Effect.succeed(true)
-  }
+  })
   return { sent, layer: Layer.succeed(TelegramClient.TelegramClient, service) }
 })
 

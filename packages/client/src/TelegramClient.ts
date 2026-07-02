@@ -3,52 +3,30 @@
  * `HttpClient` (design section 6). The volatile HTTP perimeter sits behind this port;
  * the domain talks to the port, never to `fetch` (design section 9).
  *
- * Methods fail with the typed {@link module:TelegramError.TelegramError} union,
- * never with thrown errors, and the `snake_case <-> camelCase` boundary is fully
- * contained here and in {@link module:BotApi} (design section 5.3).
+ * The method surface ({@link TelegramClientService}) is **generated** from the Bot
+ * API spec (`./generated/client`) - every Bot API method, fully typed. Only the
+ * transport seam (`call`: HTTP request, token, `snake_case` encode/decode, error
+ * mapping) is hand-written here. Methods fail with the typed
+ * {@link module:TelegramError.TelegramError} union, never with thrown errors.
  *
  * @since 0.1.0
  */
 import { Config, Context, Effect, Layer, Redacted, Schema } from "effect"
 import { HttpClient, HttpClientRequest } from "effect/unstable/http"
 import * as BotApi from "./BotApi.js"
+import * as GeneratedClient from "./generated/client.js"
 import * as TelegramError from "./TelegramError.js"
 
 const decodeResponse = Schema.decodeUnknownEffect(BotApi.ApiResponse)
-const decodeUpdates = Schema.decodeUnknownEffect(Schema.Array(BotApi.Update))
-const decodeMessage = Schema.decodeUnknownEffect(BotApi.Message)
-const decodeBoolean = Schema.decodeUnknownEffect(Schema.Boolean)
-const encodeGetUpdates = Schema.encodeUnknownEffect(BotApi.GetUpdatesParams)
-const encodeSendMessage = Schema.encodeUnknownEffect(BotApi.SendMessageParams)
-const encodeEditMessageText = Schema.encodeUnknownEffect(BotApi.EditMessageTextParams)
-const encodeAnswerCallbackQuery = Schema.encodeUnknownEffect(BotApi.AnswerCallbackQueryParams)
-const encodeSendChatAction = Schema.encodeUnknownEffect(BotApi.SendChatActionParams)
 
 /**
- * The service shape: the subset of the Bot API fibergram currently needs. Each
- * call is an `Effect` whose only failure channel is the typed Telegram error
- * union.
+ * The service shape: the full Bot API, generated from the spec. Each call is an
+ * `Effect` whose only failure channel is the typed Telegram error union.
  *
  * @category models
  * @since 0.1.0
  */
-export interface TelegramClientService {
-  readonly getUpdates: (
-    params?: BotApi.GetUpdatesParams
-  ) => Effect.Effect<ReadonlyArray<BotApi.Update>, TelegramError.TelegramError>
-  readonly sendMessage: (
-    params: BotApi.SendMessageParams
-  ) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>
-  readonly editMessageText: (
-    params: BotApi.EditMessageTextParams
-  ) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>
-  readonly answerCallbackQuery: (
-    params: BotApi.AnswerCallbackQueryParams
-  ) => Effect.Effect<boolean, TelegramError.TelegramError>
-  readonly sendChatAction: (
-    params: BotApi.SendChatActionParams
-  ) => Effect.Effect<boolean, TelegramError.TelegramError>
-}
+export type TelegramClientService = GeneratedClient.TelegramClientService
 
 /**
  * The `TelegramClient` service tag. `yield*` it inside any handler to reach the
@@ -66,7 +44,7 @@ export interface TelegramClientService {
  * @category services
  * @since 0.1.0
  */
-export class TelegramClient extends Context.Service<TelegramClient, TelegramClientService>()(
+export class TelegramClient extends Context.Service<TelegramClient, GeneratedClient.TelegramClientService>()(
   "@fibergram/client/TelegramClient"
 ) {}
 
@@ -103,7 +81,7 @@ export interface MakeOptions {
  */
 export const make = (
   options: MakeOptions
-): Effect.Effect<TelegramClientService, never, HttpClient.HttpClient> =>
+): Effect.Effect<GeneratedClient.TelegramClientService, never, HttpClient.HttpClient> =>
   Effect.gen(function* () {
     const httpClient = yield* HttpClient.HttpClient
     const token = typeof options.token === "string"
@@ -116,12 +94,15 @@ export const make = (
       (cause: unknown): TelegramError.TelegramError =>
         new TelegramError.TransportError({ method, cause })
 
-    const request = <A>(
-      method: string,
-      decodeResult: (input: unknown) => Effect.Effect<A, unknown>,
-      body: unknown
-    ): Effect.Effect<A, TelegramError.TelegramError> =>
+    // The single transport seam every generated method flows through.
+    const call: GeneratedClient.Call = (method, paramsSchema, resultSchema, params) =>
       Effect.gen(function* () {
+        const body = paramsSchema === null
+          ? {}
+          : yield* Schema.encodeUnknownEffect(paramsSchema)(params).pipe(
+            Effect.mapError(transport(method))
+          )
+
         const httpRequest = HttpClientRequest.post(`${baseUrl}/${method}`, {
           acceptJson: true
         }).pipe(HttpClientRequest.bodyJsonUnsafe(body))
@@ -130,51 +111,17 @@ export const make = (
           .execute(httpRequest)
           .pipe(Effect.mapError(transport(method)))
         const json = yield* response.json.pipe(Effect.mapError(transport(method)))
-        const envelope = yield* decodeResponse(json).pipe(
-          Effect.mapError(transport(method))
-        )
+        const envelope = yield* decodeResponse(json).pipe(Effect.mapError(transport(method)))
 
         if (!envelope.ok) {
           return yield* Effect.fail(TelegramError.fromResponse(method, envelope))
         }
-        return yield* decodeResult(envelope.result).pipe(
+        return yield* Schema.decodeUnknownEffect(resultSchema)(envelope.result).pipe(
           Effect.mapError(transport(method))
         )
       })
 
-    const getUpdates: TelegramClientService["getUpdates"] = (params) =>
-      Effect.flatMap(
-        encodeGetUpdates(params ?? {}).pipe(Effect.mapError(transport("getUpdates"))),
-        (body) => request("getUpdates", decodeUpdates, body)
-      )
-
-    const sendMessage: TelegramClientService["sendMessage"] = (params) =>
-      Effect.flatMap(
-        encodeSendMessage(params).pipe(Effect.mapError(transport("sendMessage"))),
-        (body) => request("sendMessage", decodeMessage, body)
-      )
-
-    const editMessageText: TelegramClientService["editMessageText"] = (params) =>
-      Effect.flatMap(
-        encodeEditMessageText(params).pipe(Effect.mapError(transport("editMessageText"))),
-        (body) => request("editMessageText", decodeMessage, body)
-      )
-
-    const answerCallbackQuery: TelegramClientService["answerCallbackQuery"] = (params) =>
-      Effect.flatMap(
-        encodeAnswerCallbackQuery(params).pipe(
-          Effect.mapError(transport("answerCallbackQuery"))
-        ),
-        (body) => request("answerCallbackQuery", decodeBoolean, body)
-      )
-
-    const sendChatAction: TelegramClientService["sendChatAction"] = (params) =>
-      Effect.flatMap(
-        encodeSendChatAction(params).pipe(Effect.mapError(transport("sendChatAction"))),
-        (body) => request("sendChatAction", decodeBoolean, body)
-      )
-
-    return { getUpdates, sendMessage, editMessageText, answerCallbackQuery, sendChatAction }
+    return GeneratedClient.makeMethods(call)
   })
 
 /**

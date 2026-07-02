@@ -9,17 +9,28 @@ const update = (id: number, text: string): BotApi.Update => ({
   message: { messageId: id, date: 0, chat: { id: 1, type: "private" }, text }
 })
 
+// The Bot API has 180 methods; this test only drives `getUpdates`. Fill the rest
+// with a die-if-called default so a stray call fails loudly.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type StubMethod = (params?: any) => Effect.Effect<any, any, any>
+
+const stubClient = (
+  overrides: Record<string, StubMethod>
+): TelegramClient.TelegramClientService =>
+  new Proxy(overrides, {
+    get(target, prop: string) {
+      const impl = (target as Record<string, StubMethod | undefined>)[prop]
+      return impl ?? (() => Effect.die(new Error(`Polling test: ${String(prop)} not stubbed`)))
+    }
+  }) as unknown as TelegramClient.TelegramClientService
+
 describe("Polling ingestion (section 7 - offset management)", () => {
   it.effect("advances the offset by (max updateId + 1) and streams updates in order", () =>
     Effect.gen(function* () {
       const requestedOffsets = yield* Ref.make<ReadonlyArray<number | undefined>>([])
       const calls = yield* Ref.make(0)
 
-      const service: TelegramClient.TelegramClientService = {
-        sendMessage: () => Effect.die("sendMessage is not used by this test"),
-        editMessageText: () => Effect.die("editMessageText is not used by this test"),
-        answerCallbackQuery: () => Effect.die("answerCallbackQuery is not used by this test"),
-        sendChatAction: () => Effect.die("sendChatAction is not used by this test"),
+      const service = stubClient({
         getUpdates: (params) =>
           Effect.gen(function* () {
             yield* Ref.update(requestedOffsets, (all) => [...all, params?.offset])
@@ -29,7 +40,7 @@ describe("Polling ingestion (section 7 - offset management)", () => {
             // No more updates: park so the loop doesn't busy-spin until the scope closes.
             return yield* Effect.never
           })
-      }
+      })
       const clientLayer = Layer.succeed(TelegramClient.TelegramClient, service)
 
       const collected = yield* Effect.gen(function* () {

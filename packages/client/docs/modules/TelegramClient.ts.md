@@ -1,7 +1,7 @@
 ---
 
 title: TelegramClient.ts
-nav_order: 3
+nav_order: 6
 parent: Modules
 ---
 
@@ -11,9 +11,11 @@ parent: Modules
 `HttpClient` (design section 6). The volatile HTTP perimeter sits behind this port;
 the domain talks to the port, never to `fetch` (design section 9).
 
-Methods fail with the typed {@link module:TelegramError.TelegramError} union,
-never with thrown errors, and the `snake_case <-> camelCase` boundary is fully
-contained here and in {@link module:BotApi} (design section 5.3).
+The method surface ({@link TelegramClientService}) is **generated** from the Bot
+API spec (`./generated/client`) - every Bot API method, fully typed. Only the
+transport seam (`call`: HTTP request, token, `snake_case` encode/decode, error
+mapping) is hand-written here. Methods fail with the typed
+{@link module:TelegramError.TelegramError} union, never with thrown errors.
 
 Added in v0.1.0
 
@@ -28,7 +30,7 @@ Added in v0.1.0
   - [layerToken](#layertoken)
 - [models](#models)
   - [MakeOptions (interface)](#makeoptions-interface)
-  - [TelegramClientService (interface)](#telegramclientservice-interface)
+  - [TelegramClientService (type alias)](#telegramclientservice-type-alias)
 - [services](#services)
   - [TelegramClient (class)](#telegramclient-class)
 
@@ -45,7 +47,9 @@ Prefer {@link layer}/{@link layerToken}; this is the seam tests wire a mock
 **Signature**
 
 ```ts
-export declare const make: (options: MakeOptions) => Effect.Effect<TelegramClientService, never, HttpClient.HttpClient>
+export declare const make: (
+  options: MakeOptions
+) => Effect.Effect<GeneratedClient.TelegramClientService, never, HttpClient.HttpClient>
 ```
 
 **Example**
@@ -130,28 +134,15 @@ export interface MakeOptions {
 
 Added in v0.1.0
 
-## TelegramClientService (interface)
+## TelegramClientService (type alias)
 
-The service shape: the subset of the Bot API fibergram currently needs. Each
-call is an `Effect` whose only failure channel is the typed Telegram error
-union.
+The service shape: the full Bot API, generated from the spec. Each call is an
+`Effect` whose only failure channel is the typed Telegram error union.
 
 **Signature**
 
 ```ts
-export interface TelegramClientService {
-  readonly getUpdates: (
-    params?: BotApi.GetUpdatesParams
-  ) => Effect.Effect<ReadonlyArray<BotApi.Update>, TelegramError.TelegramError>
-  readonly sendMessage: (params: BotApi.SendMessageParams) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>
-  readonly editMessageText: (
-    params: BotApi.EditMessageTextParams
-  ) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>
-  readonly answerCallbackQuery: (
-    params: BotApi.AnswerCallbackQueryParams
-  ) => Effect.Effect<boolean, TelegramError.TelegramError>
-  readonly sendChatAction: (params: BotApi.SendChatActionParams) => Effect.Effect<boolean, TelegramError.TelegramError>
-}
+export type TelegramClientService = GeneratedClient.TelegramClientService
 ```
 
 Added in v0.1.0
