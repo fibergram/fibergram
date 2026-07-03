@@ -40,6 +40,19 @@ export interface Match {
 }
 
 /**
+ * Options for {@link make}: a human-readable `description` used when the command
+ * is synced into Telegram's menu via `Router.setMyCommands` (Bot API requires
+ * 1-256 chars; an empty description opts the command out of the menu).
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface MakeOptions {
+  /** Menu description shown next to the command in Telegram's UI. */
+  readonly description?: string
+}
+
+/**
  * A declared command: its `name` (without the leading slash) plus matching and
  * argument-decoding helpers.
  *
@@ -49,6 +62,8 @@ export interface Match {
 export interface Command<Args> {
   /** The command name, normalized without the leading slash (e.g. `"setage"`). */
   readonly name: string
+  /** Menu description (empty when none was given), used by `Router.setMyCommands`. */
+  readonly description: string
   /** Surface-matches an update's message text; `None` if it isn't this command. */
   readonly match: (update: BotApi.Update) => Option.Option<Match>
   /** Decodes a {@link Match}'s tokens into typed `Args`. */
@@ -62,16 +77,22 @@ const stripSlash = (name: string): string => (name.startsWith("/") ? name.slice(
 // /name  |  /name@bot  |  /name args...  |  /name@bot args...
 const commandPattern = /^\/(\w+)(?:@\w+)?(?:\s+([\s\S]+))?$/
 
+const isStruct = (value: unknown): value is Schema.Struct<Schema.Struct.Fields> =>
+  typeof value === "object" && value !== null && "fields" in value
+
 /**
  * Declares a {@link Command} named `name` (with or without a leading slash) whose
  * arguments decode against `argsSchema`. Omit the schema for an argument-less
- * command.
+ * command; pass a `description` (as the last argument) to have the command synced
+ * into Telegram's menu by `Router.setMyCommands`.
  *
  * @example
  * import { Command } from "@fibergram/core"
  * import { Effect, Schema } from "effect"
  *
- * const setAge = Command.make("/setage", Schema.Struct({ age: Schema.NumberFromString }))
+ * const setAge = Command.make("/setage", Schema.Struct({ age: Schema.NumberFromString }), {
+ *   description: "Set your age"
+ * })
  *
  * const update = {
  *   updateId: 1,
@@ -86,11 +107,23 @@ const commandPattern = /^\/(\w+)(?:@\w+)?(?:\s+([\s\S]+))?$/
  * @category constructors
  * @since 0.1.0
  */
-export const make = <Fields extends Schema.Struct.Fields = {}>(
+export function make(name: string, options?: MakeOptions): Command<Record<string, never>>
+export function make<Fields extends Schema.Struct.Fields>(
   name: string,
-  argsSchema?: Schema.Struct<Fields>
-): Command<Schema.Schema.Type<Schema.Struct<Fields>>> => {
+  argsSchema: Schema.Struct<Fields>,
+  options?: MakeOptions
+): Command<Schema.Schema.Type<Schema.Struct<Fields>>>
+export function make<Fields extends Schema.Struct.Fields = {}>(
+  name: string,
+  argsSchemaOrOptions?: Schema.Struct<Fields> | MakeOptions,
+  maybeOptions?: MakeOptions
+): Command<Schema.Schema.Type<Schema.Struct<Fields>>> {
+  const argsSchema = isStruct(argsSchemaOrOptions)
+    ? (argsSchemaOrOptions)
+    : undefined
+  const options = (isStruct(argsSchemaOrOptions) ? maybeOptions : argsSchemaOrOptions!) ?? {}
   const normalized = stripSlash(name).toLowerCase()
+  const description = options.description ?? ""
   const schema = argsSchema ?? (Schema.Struct({}) as unknown as Schema.Struct<Fields>)
   const keys = Object.keys(schema.fields)
   const decode = Schema.decodeUnknownEffect(schema)
@@ -131,5 +164,5 @@ export const make = <Fields extends Schema.Struct.Fields = {}>(
   const parse: Command<Schema.Schema.Type<Schema.Struct<Fields>>>["parse"] = (update) =>
     Option.map(match(update), decodeArgs)
 
-  return { name: normalized, match, decodeArgs, parse }
+  return { name: normalized, description, match, decodeArgs, parse }
 }

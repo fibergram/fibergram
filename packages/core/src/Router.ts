@@ -24,14 +24,16 @@
 import { Array as Arr, Effect, Option, Pipeable, Schema } from "effect"
 
 import * as Chat from "./Chat.js"
+import { TelegramClient } from "./client/index.js"
 import * as Dialog from "./Dialog.js"
 import * as Filter from "./Filter.js"
 import * as Hydrated from "./Hydrated.js"
 import * as Message from "./Message.js"
 
 import type * as CallbackData from "./CallbackData.js"
-import type { BotApi, TelegramClient } from "./client/index.js"
+import type { BotApi, TelegramError } from "./client/index.js"
 import type * as Command from "./Command.js"
+import type * as StartLink from "./StartLink.js"
 
 /**
  * The addressable update kinds a route can match: every payload-bearing key of
@@ -76,6 +78,23 @@ export interface Route<out E, out R> {
   readonly match: (update: BotApi.Update) => Option.Option<Effect.Effect<void, E, R>>
   /** The update kinds this route consumes, or `undefined` for a wildcard. */
   readonly kinds?: ReadonlyArray<UpdateKind>
+  /** Command declaration this route serves, if any - collected by {@link setMyCommands}. */
+  readonly command?: CommandInfo
+}
+
+/**
+ * The metadata a {@link command} route carries so {@link setMyCommands} can sync
+ * it into Telegram's menu: the command `name`, its `description`, and an optional
+ * `scope`/`languageCode` (the analogue of grammY's `.addToScope`).
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface CommandInfo {
+  readonly name: string
+  readonly description: string
+  readonly scope?: BotApi.BotCommandScope
+  readonly languageCode?: string
 }
 
 const routeOf = <E, R>(
@@ -178,10 +197,31 @@ export const when = <E, R>(
   route((update) => (predicate(update) ? Option.some(handler(update)) : Option.none()))
 
 /**
+ * Per-route command options: override the menu `description` and/or bind the
+ * command to a Telegram command `scope`/`languageCode` for {@link setMyCommands}
+ * (grammY's `.addToScope`).
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface CommandOptions {
+  /** Menu description; falls back to the one given to `Command.make`. */
+  readonly description?: string
+  /** The Bot API scope this command is synced under (default scope when omitted). */
+  readonly scope?: BotApi.BotCommandScope
+  /** The language this command's description is synced for. */
+  readonly languageCode?: string
+}
+
+/**
  * Declarative sugar for a slash command. Consumes a {@link module:Command.Command}
  * declaration (which carries the args `Schema`) and calls `handler` with the
  * *already-decoded* args - the `Schema.decode` step is inserted for you, so its
  * `CommandArgsError` shows up in the route's `E` automatically.
+ *
+ * The route also carries the command's {@link CommandInfo}, so
+ * {@link setMyCommands} can sync it into Telegram's menu without a second
+ * declaration - `options.description`/`scope`/`languageCode` refine that sync.
  *
  * @example
  * import { Router, Command, Chat } from "@fibergram/core"
@@ -189,20 +229,33 @@ export const when = <E, R>(
  *
  * const setAge = Command.make("/setage", Schema.Struct({ age: Schema.NumberFromString }))
  *
- * const route = Router.command(setAge, ({ age }) => Chat.reply(`age is ${age}`))
+ * const route = Router.command(setAge, ({ age }) => Chat.reply(`age is ${age}`), {
+ *   description: "Set your age"
+ * })
  *
  * @category constructors
  * @since 0.1.0
  */
 export const command = <Args, E, R>(
   command_: Command.Command<Args>,
-  handler: (args: Args) => Effect.Effect<void, E, R>
-): Route<E | Command.CommandArgsError, R> =>
-  routeOf(
-    (update) =>
-      Option.map(command_.parse(update), (decodeArgs) => Effect.flatMap(decodeArgs, handler)),
-    ["message"]
-  )
+  handler: (args: Args) => Effect.Effect<void, E, R>,
+  options?: CommandOptions
+): Route<E | Command.CommandArgsError, R> => {
+  const info: CommandInfo = {
+    name: command_.name,
+    description: options?.description ?? command_.description,
+    ...(options?.scope !== undefined ? { scope: options.scope } : {}),
+    ...(options?.languageCode !== undefined ? { languageCode: options.languageCode } : {})
+  }
+  return {
+    ...routeOf(
+      (update) =>
+        Option.map(command_.parse(update), (decodeArgs) => Effect.flatMap(decodeArgs, handler)),
+      ["message"]
+    ),
+    command: info
+  }
+}
 
 /**
  * Declarative sugar for an inline-button tap. Consumes a
@@ -252,6 +305,43 @@ export function callback<A, E, R>(
     return Option.map(codec.parse(data), (decodeValue) => Effect.flatMap(decodeValue, run))
   }, ["callbackQuery"])
 }
+
+// `/start`, `/start@bot`, `/start <payload>` - group 1 is the deep-link payload.
+const startPattern = /^\/start(?:@\w+)?(?:\s+(\S+))?$/
+
+/**
+ * Declarative sugar for a `/start` **deep link**. Consumes a
+ * {@link module:StartLink.Codec} and calls `handler` with the *already-decoded*
+ * payload from `t.me/<bot>?start=<payload>` - the decode step is inserted for you,
+ * so `StartLinkMalformed` shows up in the route's `E`. A plain `/start` (no
+ * payload) does **not** match, leaving it to an ordinary {@link command} route.
+ *
+ * @example
+ * import { Router, StartLink, Chat } from "@fibergram/core"
+ * import { Effect, Schema } from "effect"
+ *
+ * const Ref = StartLink.make("mybot", Schema.Struct({ ref: Schema.String }))
+ *
+ * const route = Router.start(Ref, ({ ref }) =>
+ *   Chat.reply(`invited by ${ref}`).pipe(Effect.asVoid)
+ * )
+ *
+ * @category constructors
+ * @since 0.1.0
+ */
+export const start = <A, E, R>(
+  codec: StartLink.Codec<A>,
+  handler: (value: A) => Effect.Effect<void, E, R>
+): Route<E | StartLink.StartLinkMalformed, R> =>
+  routeOf((update) => {
+    const text = update.message?.text
+    if (text === undefined) return Option.none()
+    const groups = startPattern.exec(text.trim())
+    if (groups === null) return Option.none()
+    const payload = groups[1]
+    if (payload === undefined) return Option.none()
+    return Option.some(Effect.flatMap(codec.decode(payload), handler))
+  }, ["message"])
 
 /**
  * Matches an update **by its kind**, handing the handler the precisely-typed
@@ -713,6 +803,224 @@ export const allowedUpdates = <E, R>(router: Router<E, R>): ReadonlyArray<string
     for (const kind of candidate.kinds ?? []) kinds.add(toSnakeCase(kind))
   }
   return [...kinds].sort()
+}
+
+// --- command sync ------------------------------------------------------------
+
+/**
+ * A set of {@link module:BotApi.BotCommand}s to sync under one scope/language -
+ * exactly the shape one `setMyCommands` call takes.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface CommandGroup {
+  readonly scope?: BotApi.BotCommandScope
+  readonly languageCode?: string
+  readonly commands: ReadonlyArray<BotApi.BotCommand>
+}
+
+/**
+ * Groups a router's {@link command} routes into one {@link CommandGroup} per
+ * distinct scope/language. Only commands with a **non-empty description** are
+ * included - an empty description opts a command out of the menu (Telegram
+ * rejects empty descriptions).
+ *
+ * @example
+ * import { Router, Command, Chat } from "@fibergram/core"
+ *
+ * const help = Command.make("/help", { description: "Show help" })
+ * const router = Router.make(Router.command(help, () => Chat.reply("...")))
+ *
+ * Router.commandGroups(router) // [{ commands: [{ command: "help", description: "Show help" }] }]
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const commandGroups = <E, R>(router: Router<E, R>): ReadonlyArray<CommandGroup> => {
+  const groups = new Map<string, {
+    scope?: BotApi.BotCommandScope
+    languageCode?: string
+    commands: Array<BotApi.BotCommand>
+  }>()
+  for (const candidate of router.routes) {
+    const info = candidate.command
+    if (info === undefined || info.description === "") continue
+    const key = JSON.stringify({ scope: info.scope ?? null, languageCode: info.languageCode ?? null })
+    let group = groups.get(key)
+    if (group === undefined) {
+      group = {
+        commands: [],
+        ...(info.scope !== undefined ? { scope: info.scope } : {}),
+        ...(info.languageCode !== undefined ? { languageCode: info.languageCode } : {})
+      }
+      groups.set(key, group)
+    }
+    group.commands.push({ command: info.name, description: info.description })
+  }
+  return [...groups.values()]
+}
+
+/**
+ * The default-scope commands a router declares - sugar over {@link commandGroups}
+ * for the common single-scope case (e.g. to diff against `getMyCommands`).
+ *
+ * @example
+ * import { Router, Command, Chat } from "@fibergram/core"
+ *
+ * const help = Command.make("/help", { description: "Show help" })
+ * const router = Router.make(Router.command(help, () => Chat.reply("...")))
+ *
+ * Router.commands(router) // [{ command: "help", description: "Show help" }]
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const commands = <E, R>(router: Router<E, R>): ReadonlyArray<BotApi.BotCommand> =>
+  commandGroups(router).find((group) => group.scope === undefined && group.languageCode === undefined)
+    ?.commands ?? []
+
+/**
+ * Syncs a router's declared commands into Telegram's menu - one `setMyCommands`
+ * call per {@link CommandGroup} (scope/language). Run it once at startup and the
+ * bot's command menu follows its routing table, no hand-written `setMyCommands`.
+ *
+ * @example
+ * import { Router, Command, Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const help = Command.make("/help", { description: "Show help" })
+ * const router = Router.make(Router.command(help, () => Chat.reply("...")))
+ *
+ * const program: Effect.Effect<void, never, never> = Effect.void
+ * const sync = Router.setMyCommands(router) // Effect<void, TelegramError, TelegramClient>
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const setMyCommands = <E, R>(
+  router: Router<E, R>
+): Effect.Effect<void, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const tg = yield* TelegramClient.TelegramClient
+    yield* Effect.asVoid(
+      Effect.forEach(commandGroups(router), (group) =>
+        tg.setMyCommands({
+          commands: group.commands,
+          ...(group.scope !== undefined ? { scope: group.scope } : {}),
+          ...(group.languageCode !== undefined ? { languageCode: group.languageCode } : {})
+        }))
+    )
+  })
+
+// --- command-not-found fallback ----------------------------------------------
+
+// `/foo` / `/foo@bot` / `/foo args` - group 1 is the bare command name.
+const commandNameRe = /^\/(\w+)(?:@\w+)?(?:\s|$)/
+
+/** Levenshtein edit distance, for fuzzy command suggestions. */
+const editDistance = (a: string, b: string): number => {
+  const rows = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    let prev = rows[0]!
+    rows[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const temp = rows[j]!
+      rows[j] = a[i - 1] === b[j - 1]
+        ? prev
+        : 1 + Math.min(prev, rows[j]!, rows[j - 1]!)
+      prev = temp
+    }
+  }
+  return rows[b.length]!
+}
+
+const knownNames = (known: Router<unknown, unknown> | Iterable<string>): ReadonlySet<string> => {
+  if (typeof known === "object" && known !== null && "routes" in known) {
+    const set = new Set<string>()
+    for (const candidate of (known).routes) {
+      if (candidate.command !== undefined) set.add(candidate.command.name)
+    }
+    return set
+  }
+  return new Set(known)
+}
+
+/**
+ * What {@link commandNotFound} hands its handler: the unknown `command` (without
+ * the slash) and the closest registered names as fuzzy `suggestions`.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface CommandNotFound {
+  readonly command: string
+  readonly suggestions: ReadonlyArray<string>
+}
+
+/**
+ * Options for {@link commandNotFound}.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface CommandNotFoundOptions {
+  /** Max edit distance for a name to be suggested (default `3`). */
+  readonly maxDistance?: number
+  /** Max number of suggestions returned (default `3`). */
+  readonly maxSuggestions?: number
+}
+
+/**
+ * A fallback route that fires when a `/command` message names a command **not**
+ * registered in `known` (a {@link Router} or an explicit name list), handing the
+ * handler the unknown name plus fuzzy {@link CommandNotFound} suggestions (grammY's
+ * `commandNotFound`). Place it last; a known command with bad args is handled by
+ * its own {@link command} route, not here.
+ *
+ * @example
+ * import { Router, Command, Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const help = Command.make("/help", { description: "Show help" })
+ * const known = Router.make(Router.command(help, () => Chat.reply("help")))
+ *
+ * const router = known.pipe(
+ *   Router.add(Router.commandNotFound(known, ({ command, suggestions }) =>
+ *     Chat.reply(
+ *       suggestions.length > 0
+ *         ? `Unknown /${command}. Did you mean /${suggestions[0]}?`
+ *         : `Unknown /${command}.`
+ *     ).pipe(Effect.asVoid)
+ *   ))
+ * )
+ *
+ * @category constructors
+ * @since 0.1.0
+ */
+export const commandNotFound = <E, R>(
+  known: Router<unknown, unknown> | Iterable<string>,
+  handler: (info: CommandNotFound) => Effect.Effect<void, E, R>,
+  options?: CommandNotFoundOptions
+): Route<E, R> => {
+  const names = knownNames(known)
+  const maxDistance = options?.maxDistance ?? 3
+  const maxSuggestions = options?.maxSuggestions ?? 3
+  return routeOf((update) => {
+    const text = update.message?.text
+    if (text === undefined) return Option.none()
+    const groups = commandNameRe.exec(text.trim())
+    if (groups === null) return Option.none()
+    const command_ = groups[1]?.toLowerCase()
+    if (command_ === undefined || names.has(command_)) return Option.none()
+    const suggestions = [...names]
+      .map((name) => [name, editDistance(command_, name)] as const)
+      .filter(([, distance]) => distance <= maxDistance)
+      .sort(([, a], [, b]) => a - b)
+      .slice(0, maxSuggestions)
+      .map(([name]) => name)
+    return Option.some(handler({ command: command_, suggestions }))
+  }, ["message"])
 }
 
 /**

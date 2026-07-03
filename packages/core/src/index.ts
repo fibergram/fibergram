@@ -114,6 +114,13 @@ export * as CallbackData from "./CallbackData.js"
 export * as Command from "./Command.js"
 
 /**
+ * Typed `t.me/<bot>?start=...` deep-link payload codec.
+ *
+ * @since 0.1.0
+ */
+export * as StartLink from "./StartLink.js"
+
+/**
  * The coroutine DSL that elaborates into the `Dialog` decider.
  *
  * @since 0.1.0

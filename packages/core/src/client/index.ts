@@ -42,3 +42,10 @@ export * as InputFile from "./InputFile.js"
  * @since 0.1.0
  */
 export * as Multipart from "./Multipart.js"
+
+/**
+ * Mini App `initData` HMAC validation and the typed `WebAppInitData`.
+ *
+ * @since 0.1.0
+ */
+export * as WebApp from "./WebApp.js"

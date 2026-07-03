@@ -34,6 +34,7 @@ export interface TestTelegram {
   readonly answered: Ref.Ref<ReadonlyArray<BotApi.AnswerCallbackQueryParams>>
   readonly reactions: Ref.Ref<ReadonlyArray<BotApi.SetMessageReactionParams>>
   readonly inlineAnswers: Ref.Ref<ReadonlyArray<BotApi.AnswerInlineQueryParams>>
+  readonly myCommands: Ref.Ref<ReadonlyArray<BotApi.SetMyCommandsParams>>
   readonly layer: Layer.Layer<TelegramClient.TelegramClient>
 }
 
@@ -44,6 +45,7 @@ export const make: Effect.Effect<TestTelegram> = Effect.gen(function* () {
   const answered = yield* Ref.make<ReadonlyArray<BotApi.AnswerCallbackQueryParams>>([])
   const reactions = yield* Ref.make<ReadonlyArray<BotApi.SetMessageReactionParams>>([])
   const inlineAnswers = yield* Ref.make<ReadonlyArray<BotApi.AnswerInlineQueryParams>>([])
+  const myCommands = yield* Ref.make<ReadonlyArray<BotApi.SetMyCommandsParams>>([])
   const counter = yield* Ref.make(1000)
 
   const service = stubClient({
@@ -75,7 +77,9 @@ export const make: Effect.Effect<TestTelegram> = Effect.gen(function* () {
     setMessageReaction: (params) =>
       Ref.update(reactions, (all) => [...all, params]).pipe(Effect.as(true)),
     answerInlineQuery: (params) =>
-      Ref.update(inlineAnswers, (all) => [...all, params]).pipe(Effect.as(true))
+      Ref.update(inlineAnswers, (all) => [...all, params]).pipe(Effect.as(true)),
+    setMyCommands: (params) =>
+      Ref.update(myCommands, (all) => [...all, params]).pipe(Effect.as(true))
   })
 
   return {
@@ -85,6 +89,7 @@ export const make: Effect.Effect<TestTelegram> = Effect.gen(function* () {
     answered,
     reactions,
     inlineAnswers,
+    myCommands,
     layer: Layer.succeed(TelegramClient.TelegramClient, service)
   }
 })
