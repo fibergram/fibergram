@@ -9,8 +9,30 @@
  */
 import { Schema } from "effect"
 
+import * as InputFileModule from "../InputFile.js"
+
 // Auto-generated from the Telegram Bot API spec (Bot API 10.1).
 // Do NOT edit above the MANUAL marker — run `pnpm codegen` to regenerate.
+/**
+ * The contents of a file to be uploaded, as a tagged {@link module:InputFile.InputFile}
+ * value (path / bytes / stream / URL).
+ *
+ * @category schemas
+ * @since 0.1.0
+ */
+export const InputFile: Schema.declare<InputFileModule.InputFile> = Schema.declare<InputFileModule.InputFile>(
+  InputFileModule.isInputFile,
+  { title: "InputFile" }
+)
+
+/**
+ * A file to upload — see {@link module:InputFile.InputFile}.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type InputFile = InputFileModule.InputFile
+
 /**
  * This object describes the types of gifts that can be gifted to a user or a chat.
  *
@@ -7390,8 +7412,8 @@ export type InputChecklist = Schema.Schema.Type<typeof InputChecklist>
  */
 export const InputMediaAnimation = Schema.Struct({
   type: Schema.Literal("animation"),
-  media: Schema.String,
-  thumbnail: Schema.optionalKey(Schema.String),
+  media: Schema.Union([InputFile, Schema.String]),
+  thumbnail: Schema.optionalKey(Schema.Union([InputFile, Schema.String])),
   caption: Schema.optionalKey(Schema.String),
   parseMode: Schema.optionalKey(Schema.String),
   captionEntities: Schema.optionalKey(Schema.Array(MessageEntity)),
@@ -7425,8 +7447,8 @@ export type InputMediaAnimation = Schema.Schema.Type<typeof InputMediaAnimation>
  */
 export const InputMediaAudio = Schema.Struct({
   type: Schema.Literal("audio"),
-  media: Schema.String,
-  thumbnail: Schema.optionalKey(Schema.String),
+  media: Schema.Union([InputFile, Schema.String]),
+  thumbnail: Schema.optionalKey(Schema.Union([InputFile, Schema.String])),
   caption: Schema.optionalKey(Schema.String),
   parseMode: Schema.optionalKey(Schema.String),
   captionEntities: Schema.optionalKey(Schema.Array(MessageEntity)),
@@ -7456,8 +7478,8 @@ export type InputMediaAudio = Schema.Schema.Type<typeof InputMediaAudio>
  */
 export const InputMediaDocument = Schema.Struct({
   type: Schema.Literal("document"),
-  media: Schema.String,
-  thumbnail: Schema.optionalKey(Schema.String),
+  media: Schema.Union([InputFile, Schema.String]),
+  thumbnail: Schema.optionalKey(Schema.Union([InputFile, Schema.String])),
   caption: Schema.optionalKey(Schema.String),
   parseMode: Schema.optionalKey(Schema.String),
   captionEntities: Schema.optionalKey(Schema.Array(MessageEntity)),
@@ -7486,8 +7508,8 @@ export type InputMediaDocument = Schema.Schema.Type<typeof InputMediaDocument>
  */
 export const InputMediaLivePhoto = Schema.Struct({
   type: Schema.Literal("live_photo"),
-  media: Schema.String,
-  photo: Schema.String,
+  media: Schema.Union([InputFile, Schema.String]),
+  photo: Schema.Union([InputFile, Schema.String]),
   caption: Schema.optionalKey(Schema.String),
   parseMode: Schema.optionalKey(Schema.String),
   captionEntities: Schema.optionalKey(Schema.Array(MessageEntity)),
@@ -7518,7 +7540,7 @@ export type InputMediaLivePhoto = Schema.Schema.Type<typeof InputMediaLivePhoto>
  */
 export const InputMediaPhoto = Schema.Struct({
   type: Schema.Literal("photo"),
-  media: Schema.String,
+  media: Schema.Union([InputFile, Schema.String]),
   caption: Schema.optionalKey(Schema.String),
   parseMode: Schema.optionalKey(Schema.String),
   captionEntities: Schema.optionalKey(Schema.Array(MessageEntity)),
@@ -7549,9 +7571,9 @@ export type InputMediaPhoto = Schema.Schema.Type<typeof InputMediaPhoto>
  */
 export const InputMediaVideo = Schema.Struct({
   type: Schema.Literal("video"),
-  media: Schema.String,
-  thumbnail: Schema.optionalKey(Schema.String),
-  cover: Schema.optionalKey(Schema.String),
+  media: Schema.Union([InputFile, Schema.String]),
+  thumbnail: Schema.optionalKey(Schema.Union([InputFile, Schema.String])),
+  cover: Schema.optionalKey(Schema.Union([InputFile, Schema.String])),
   startTimestamp: Schema.optionalKey(Schema.Number),
   caption: Schema.optionalKey(Schema.String),
   parseMode: Schema.optionalKey(Schema.String),
@@ -7649,7 +7671,7 @@ export type InputMediaLocation = Schema.Schema.Type<typeof InputMediaLocation>
  */
 export const InputMediaSticker = Schema.Struct({
   type: Schema.Literal("sticker"),
-  media: Schema.String,
+  media: Schema.Union([InputFile, Schema.String]),
   emoji: Schema.optionalKey(Schema.String)
 })
 
@@ -7702,8 +7724,8 @@ export type InputMediaVenue = Schema.Schema.Type<typeof InputMediaVenue>
  */
 export const InputPaidMediaLivePhoto = Schema.Struct({
   type: Schema.Literal("live_photo"),
-  media: Schema.String,
-  photo: Schema.String
+  media: Schema.Union([InputFile, Schema.String]),
+  photo: Schema.Union([InputFile, Schema.String])
 })
 
 /**
@@ -7722,7 +7744,7 @@ export type InputPaidMediaLivePhoto = Schema.Schema.Type<typeof InputPaidMediaLi
  */
 export const InputPaidMediaPhoto = Schema.Struct({
   type: Schema.Literal("photo"),
-  media: Schema.String
+  media: Schema.Union([InputFile, Schema.String])
 })
 
 /**
@@ -7741,9 +7763,9 @@ export type InputPaidMediaPhoto = Schema.Schema.Type<typeof InputPaidMediaPhoto>
  */
 export const InputPaidMediaVideo = Schema.Struct({
   type: Schema.Literal("video"),
-  media: Schema.String,
-  thumbnail: Schema.optionalKey(Schema.String),
-  cover: Schema.optionalKey(Schema.String),
+  media: Schema.Union([InputFile, Schema.String]),
+  thumbnail: Schema.optionalKey(Schema.Union([InputFile, Schema.String])),
+  cover: Schema.optionalKey(Schema.Union([InputFile, Schema.String])),
   startTimestamp: Schema.optionalKey(Schema.Number),
   width: Schema.optionalKey(Schema.Number),
   height: Schema.optionalKey(Schema.Number),
@@ -7846,7 +7868,7 @@ export type InputPollOption = Schema.Schema.Type<typeof InputPollOption>
  */
 export const InputProfilePhotoStatic = Schema.Struct({
   type: Schema.Literal("static"),
-  photo: Schema.String
+  photo: Schema.Union([InputFile, Schema.String])
 })
 
 /**
@@ -7865,7 +7887,7 @@ export type InputProfilePhotoStatic = Schema.Schema.Type<typeof InputProfilePhot
  */
 export const InputProfilePhotoAnimated = Schema.Struct({
   type: Schema.Literal("animated"),
-  animation: Schema.String,
+  animation: Schema.Union([InputFile, Schema.String]),
   mainFrameTimestamp: Schema.optionalKey(Schema.Number)
 }).pipe(
   Schema.encodeKeys({
@@ -7904,7 +7926,7 @@ export type InputProfilePhoto = Schema.Schema.Type<typeof InputProfilePhoto>
  * @since 0.1.0
  */
 export const InputSticker = Schema.Struct({
-  sticker: Schema.String,
+  sticker: Schema.Union([InputFile, Schema.String]),
   format: Schema.Literal("one"),
   emojiList: Schema.Array(Schema.String),
   maskPosition: Schema.optionalKey(MaskPosition),
@@ -7932,7 +7954,7 @@ export type InputSticker = Schema.Schema.Type<typeof InputSticker>
  */
 export const InputStoryContentPhoto = Schema.Struct({
   type: Schema.Literal("photo"),
-  photo: Schema.Literal("of")
+  photo: Schema.Union([InputFile, Schema.String])
 })
 
 /**
@@ -7951,7 +7973,7 @@ export type InputStoryContentPhoto = Schema.Schema.Type<typeof InputStoryContent
  */
 export const InputStoryContentVideo = Schema.Struct({
   type: Schema.Literal("video"),
-  video: Schema.Literal("of"),
+  video: Schema.Union([InputFile, Schema.String]),
   duration: Schema.optionalKey(Schema.Number),
   coverFrameTimestamp: Schema.optionalKey(Schema.Number),
   isAnimation: Schema.optionalKey(Schema.Boolean)
@@ -9754,21 +9776,5 @@ export const WebhookInfo = Schema.Struct({
 export type WebhookInfo = Schema.Schema.Type<typeof WebhookInfo>
 
 // === MANUAL — not regenerated below (codegen) ===
-
-/**
- * The contents of a file to be uploaded. Modelled as opaque `unknown`: fibergram
- * currently sends `file_id`/URL strings inline; true multipart upload is future work.
- * Kept by hand (never generated) — see `SKIP_TYPES` in the generator.
- *
- * @category schemas
- * @since 0.1.0
- */
-export const InputFile = Schema.Unknown
-
-/**
- * Decoded `InputFile` (opaque).
- *
- * @category models
- * @since 0.1.0
- */
-export type InputFile = Schema.Schema.Type<typeof InputFile>
+//
+// (The `InputFile` schema is emitted above the marker, bound to `../InputFile.js`.)

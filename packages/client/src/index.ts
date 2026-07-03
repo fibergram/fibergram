@@ -28,3 +28,17 @@ export * as TelegramError from "./TelegramError.js"
  * @since 0.1.0
  */
 export * as TelegramClient from "./TelegramClient.js"
+
+/**
+ * `InputFile` - files to upload (path / bytes / stream / URL).
+ *
+ * @since 0.1.0
+ */
+export * as InputFile from "./InputFile.js"
+
+/**
+ * The JSON-vs-multipart body decision for the transport seam.
+ *
+ * @since 0.1.0
+ */
+export * as Multipart from "./Multipart.js"

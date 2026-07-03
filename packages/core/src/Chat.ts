@@ -6,7 +6,9 @@
  *
  * These are deliberately thin: they only add `TelegramClient` to a handler's `R`
  * (never an ambient "chat" tag), and they never grow into a god-object - each
- * function does exactly one Bot API call against the current chat.
+ * function does exactly one Bot API call against the current chat. Send helpers
+ * return a hydrated {@link module:SentMessage.SentMessage} so the handler can act on
+ * what it just sent.
  *
  * @since 0.1.0
  */
@@ -14,10 +16,35 @@ import { Duration, Effect, Fiber, Option, Ref } from "effect"
 
 import { TelegramClient } from "@fibergram/client"
 
+import * as SentMessage from "./SentMessage.js"
 import * as UpdateContext from "./UpdateContext.js"
 
-import type { TelegramError , BotApi} from "@fibergram/client"
+import type * as MediaGroup from "./MediaGroup.js"
+import type { BotApi, InputFile, TelegramError } from "@fibergram/client"
 
+/**
+ * Any of the four reply-markup kinds a message can carry: an inline keyboard, a
+ * custom reply keyboard, a keyboard-removal, or a force-reply.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type ReplyMarkup =
+  | BotApi.InlineKeyboardMarkup
+  | BotApi.ReplyKeyboardMarkup
+  | BotApi.ReplyKeyboardRemove
+  | BotApi.ForceReply
+
+/**
+ * A file to send: an uploaded {@link module:InputFile.InputFile} or a `file_id`/URL
+ * string.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type Media = InputFile.InputFile | string
+
+// --- ambient accessors -------------------------------------------------------
 
 /**
  * The chat id of the update being handled.
@@ -83,29 +110,103 @@ export const from: Effect.Effect<Option.Option<BotApi.User>> = Effect.map(
   }
 )
 
+// --- shared field builders ---------------------------------------------------
+
+type Env = UpdateContext.UpdateEnv
+
+const threadField = (env: Env): { messageThreadId?: number } =>
+  Option.isSome(env.threadId) ? { messageThreadId: env.threadId.value } : {}
+
+const markupField = (options?: { readonly replyMarkup?: ReplyMarkup }): { replyMarkup?: ReplyMarkup } =>
+  options?.replyMarkup !== undefined ? { replyMarkup: options.replyMarkup } : {}
+
+const replyToField = (
+  options?: { readonly replyToMessageId?: number; readonly replyParameters?: BotApi.ReplyParameters }
+): { replyParameters?: BotApi.ReplyParameters } => {
+  if (options?.replyParameters !== undefined) return { replyParameters: options.replyParameters }
+  if (options?.replyToMessageId !== undefined) return { replyParameters: { messageId: options.replyToMessageId } }
+  return {}
+}
+
+const captionFields = (
+  options?: MediaOptions
+): { caption?: string; parseMode?: string; captionEntities?: ReadonlyArray<BotApi.MessageEntity> } => ({
+  ...(options?.caption !== undefined ? { caption: options.caption } : {}),
+  ...(options?.parseMode !== undefined ? { parseMode: options.parseMode } : {}),
+  ...(options?.captionEntities !== undefined ? { captionEntities: options.captionEntities } : {})
+})
+
+/** Record the sent message id (so `editLast` can target it) and hydrate it. */
+const remember = (env: Env, message: BotApi.Message): Effect.Effect<SentMessage.SentMessage> =>
+  Effect.as(Ref.set(env.lastSent, Option.some(message.messageId)), SentMessage.make(message))
+
+const currentMessageId = (update: BotApi.Update): number | undefined =>
+  update.message?.messageId ??
+  update.editedMessage?.messageId ??
+  update.channelPost?.messageId ??
+  update.editedChannelPost?.messageId
+
+// --- options -----------------------------------------------------------------
+
+/**
+ * Options common to every send helper.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface SendOptions {
+  /** Attach any of the four reply-markup kinds. */
+  readonly replyMarkup?: ReplyMarkup
+  /** Reply to a specific message id (shorthand for `replyParameters.messageId`). */
+  readonly replyToMessageId?: number
+  /** Full reply parameters (quote, cross-chat reply, ...); overrides `replyToMessageId`. */
+  readonly replyParameters?: BotApi.ReplyParameters
+}
+
+/**
+ * Options for the caption-bearing media helpers.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface MediaOptions extends SendOptions {
+  /** Caption text shown with the media. */
+  readonly caption?: string
+  /** Parse mode for the caption (`"MarkdownV2"`, `"HTML"`, ...). */
+  readonly parseMode?: string
+  /** Pre-parsed caption entities (mutually exclusive with `parseMode`). */
+  readonly captionEntities?: ReadonlyArray<BotApi.MessageEntity>
+}
+
 /**
  * Options for {@link reply}.
  *
  * @category models
  * @since 0.1.0
  */
-export interface ReplyOptions {
-  /** Attach an inline keyboard (e.g. `CallbackData`-encoded buttons). */
-  readonly replyMarkup?: BotApi.InlineKeyboardMarkup
-  /** Reply to a specific message id. */
-  readonly replyToMessageId?: number
+export interface ReplyOptions extends SendOptions {
+  /** Parse mode for the text (`"MarkdownV2"`, `"HTML"`, ...). */
+  readonly parseMode?: string
+  /** Pre-parsed text entities (mutually exclusive with `parseMode`). */
+  readonly entities?: ReadonlyArray<BotApi.MessageEntity>
+  /** Link-preview behaviour for the message. */
+  readonly linkPreviewOptions?: BotApi.LinkPreviewOptions
 }
+
+// --- text --------------------------------------------------------------------
 
 /**
  * Sends a message to the current chat (threaded when the update is threaded), and
- * remembers its id so a later {@link editLast} can target it.
+ * remembers its id so a later {@link editLast} can target it. Returns a hydrated
+ * {@link module:SentMessage.SentMessage}.
  *
  * @example
  * import { Chat } from "@fibergram/core"
  * import { Effect } from "effect"
  *
  * const handler = Effect.gen(function* () {
- *   yield* Chat.reply("Hello!")
+ *   const sent = yield* Chat.reply("Hello!")
+ *   yield* sent.react("👍")
  * })
  *
  * @category combinators
@@ -114,21 +215,21 @@ export interface ReplyOptions {
 export const reply = (
   text: string,
   options?: ReplyOptions
-): Effect.Effect<BotApi.Message, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
   Effect.gen(function* () {
     const env = yield* UpdateContext.env
     const tg = yield* TelegramClient.TelegramClient
     const message = yield* tg.sendMessage({
       chatId: env.chatId,
       text,
-      ...(Option.isSome(env.threadId) ? { messageThreadId: env.threadId.value } : {}),
-      ...(options?.replyToMessageId !== undefined
-        ? { replyParameters: { messageId: options.replyToMessageId } }
-        : {}),
-      ...(options?.replyMarkup !== undefined ? { replyMarkup: options.replyMarkup } : {})
+      ...threadField(env),
+      ...markupField(options),
+      ...replyToField(options),
+      ...(options?.parseMode !== undefined ? { parseMode: options.parseMode } : {}),
+      ...(options?.entities !== undefined ? { entities: options.entities } : {}),
+      ...(options?.linkPreviewOptions !== undefined ? { linkPreviewOptions: options.linkPreviewOptions } : {})
     })
-    yield* Ref.set(env.lastSent, Option.some(message.messageId))
-    return message
+    return yield* remember(env, message)
   })
 
 /**
@@ -140,6 +241,8 @@ export const reply = (
 export interface EditOptions {
   /** Replace the inline keyboard. */
   readonly replyMarkup?: BotApi.InlineKeyboardMarkup
+  /** Parse mode for the new text. */
+  readonly parseMode?: string
 }
 
 /**
@@ -162,7 +265,7 @@ export interface EditOptions {
 export const editLast = (
   text: string,
   options?: EditOptions
-): Effect.Effect<BotApi.Message, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
   Effect.gen(function* () {
     const env = yield* UpdateContext.env
     const last = yield* Ref.get(env.lastSent)
@@ -177,10 +280,506 @@ export const editLast = (
       chatId: env.chatId,
       messageId: last.value,
       text,
-      ...(options?.replyMarkup !== undefined ? { replyMarkup: options.replyMarkup } : {})
+      ...(options?.replyMarkup !== undefined ? { replyMarkup: options.replyMarkup } : {}),
+      ...(options?.parseMode !== undefined ? { parseMode: options.parseMode } : {})
     })
-    return edited as BotApi.Message
+    return SentMessage.make(edited as BotApi.Message)
   })
+
+// --- media -------------------------------------------------------------------
+
+const sendFile = (
+  key: string,
+  method: (params: never) => Effect.Effect<BotApi.Message, TelegramError.TelegramError>,
+  file: Media,
+  options?: MediaOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const message = yield* method({
+      chatId: env.chatId,
+      [key]: file,
+      ...threadField(env),
+      ...markupField(options),
+      ...replyToField(options),
+      ...captionFields(options)
+    } as never)
+    return yield* remember(env, message)
+  })
+
+/**
+ * Sends a photo to the current chat (from disk, bytes, stream, URL, or `file_id`).
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { InputFile } from "@fibergram/client"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyPhoto(InputFile.fromPath("./cat.png"), { caption: "meow" })
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyPhoto = (
+  photo: Media,
+  options?: MediaOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.flatMap(TelegramClient.TelegramClient, (tg) => sendFile("photo", tg.sendPhoto, photo, options))
+
+/**
+ * Sends a general file (document) to the current chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { InputFile } from "@fibergram/client"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyDocument(InputFile.fromPath("./report.pdf"))
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyDocument = (
+  document: Media,
+  options?: MediaOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.flatMap(TelegramClient.TelegramClient, (tg) => sendFile("document", tg.sendDocument, document, options))
+
+/**
+ * Sends a video to the current chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { InputFile } from "@fibergram/client"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyVideo(InputFile.fromUrl("https://example.com/clip.mp4"))
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyVideo = (
+  video: Media,
+  options?: MediaOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.flatMap(TelegramClient.TelegramClient, (tg) => sendFile("video", tg.sendVideo, video, options))
+
+/**
+ * Sends an audio track to the current chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { InputFile } from "@fibergram/client"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyAudio(InputFile.fromPath("./song.mp3"))
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyAudio = (
+  audio: Media,
+  options?: MediaOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.flatMap(TelegramClient.TelegramClient, (tg) => sendFile("audio", tg.sendAudio, audio, options))
+
+/**
+ * Sends a voice message to the current chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { InputFile } from "@fibergram/client"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyVoice(InputFile.fromPath("./note.ogg"))
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyVoice = (
+  voice: Media,
+  options?: MediaOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.flatMap(TelegramClient.TelegramClient, (tg) => sendFile("voice", tg.sendVoice, voice, options))
+
+/**
+ * Sends an animation (GIF or soundless H.264) to the current chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { InputFile } from "@fibergram/client"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyAnimation(InputFile.fromPath("./loop.gif"))
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyAnimation = (
+  animation: Media,
+  options?: MediaOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.flatMap(TelegramClient.TelegramClient, (tg) => sendFile("animation", tg.sendAnimation, animation, options))
+
+/**
+ * Sends a sticker to the current chat (stickers carry no caption).
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replySticker("CAACAgIAAxk...")
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replySticker = (
+  sticker: Media,
+  options?: SendOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const tg = yield* TelegramClient.TelegramClient
+    const message = yield* tg.sendSticker({
+      chatId: env.chatId,
+      sticker,
+      ...threadField(env),
+      ...markupField(options),
+      ...replyToField(options)
+    })
+    return yield* remember(env, message)
+  })
+
+/**
+ * Sends an album (media group) to the current chat. Accepts a
+ * {@link module:MediaGroup.MediaGroup} builder or a raw array of items. Returns one
+ * hydrated {@link module:SentMessage.SentMessage} per item.
+ *
+ * @example
+ * import { Chat, MediaGroup } from "@fibergram/core"
+ * import { InputFile } from "@fibergram/client"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyMediaGroup(
+ *     MediaGroup.empty
+ *       .photo(InputFile.fromPath("./1.png"), { caption: "Album" })
+ *       .photo(InputFile.fromPath("./2.png"))
+ *   )
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyMediaGroup = (
+  group: MediaGroup.MediaGroup | ReadonlyArray<MediaGroup.Item>
+): Effect.Effect<
+  ReadonlyArray<SentMessage.SentMessage>,
+  TelegramError.TelegramError,
+  TelegramClient.TelegramClient
+> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const tg = yield* TelegramClient.TelegramClient
+    const media = Array.isArray(group) ? group : (group as MediaGroup.MediaGroup).items
+    const messages = yield* tg.sendMediaGroup({
+      chatId: env.chatId,
+      media,
+      ...threadField(env)
+    })
+    const last = messages.at(-1)
+    if (last !== undefined) yield* Ref.set(env.lastSent, Option.some(last.messageId))
+    return messages.map(SentMessage.make)
+  })
+
+/**
+ * Sends a location to the current chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyLocation(51.5, -0.12)
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyLocation = (
+  latitude: number,
+  longitude: number,
+  options?: SendOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const tg = yield* TelegramClient.TelegramClient
+    const message = yield* tg.sendLocation({
+      chatId: env.chatId,
+      latitude,
+      longitude,
+      ...threadField(env),
+      ...markupField(options),
+      ...replyToField(options)
+    })
+    return yield* remember(env, message)
+  })
+
+/**
+ * Sends a phone contact to the current chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyContact("+15551234567", "Ada")
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyContact = (
+  phoneNumber: string,
+  firstName: string,
+  options?: SendOptions & { readonly lastName?: string }
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const tg = yield* TelegramClient.TelegramClient
+    const message = yield* tg.sendContact({
+      chatId: env.chatId,
+      phoneNumber,
+      firstName,
+      ...(options?.lastName !== undefined ? { lastName: options.lastName } : {}),
+      ...threadField(env),
+      ...markupField(options),
+      ...replyToField(options)
+    })
+    return yield* remember(env, message)
+  })
+
+/**
+ * Options for {@link replyPoll}.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface PollOptions extends SendOptions {
+  /** Whether the poll is anonymous (default `true`). */
+  readonly isAnonymous?: boolean
+  /** `"regular"` (default) or `"quiz"`. */
+  readonly type?: string
+  /** Allow multiple answers (regular polls only). */
+  readonly allowsMultipleAnswers?: boolean
+  /** 0-based id of the correct answer (quiz polls). */
+  readonly correctOptionId?: number
+}
+
+/**
+ * Sends a poll to the current chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyPoll("Pick one", ["A", "B", "C"])
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyPoll = (
+  question: string,
+  choices: ReadonlyArray<string>,
+  options?: PollOptions
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const tg = yield* TelegramClient.TelegramClient
+    const message = yield* tg.sendPoll({
+      chatId: env.chatId,
+      question,
+      options: choices.map((text) => ({ text })),
+      ...(options?.isAnonymous !== undefined ? { isAnonymous: options.isAnonymous } : {}),
+      ...(options?.type !== undefined ? { type: options.type } : {}),
+      ...(options?.allowsMultipleAnswers !== undefined
+        ? { allowsMultipleAnswers: options.allowsMultipleAnswers }
+        : {}),
+      ...(options?.correctOptionId !== undefined ? { correctOptionId: options.correctOptionId } : {}),
+      ...threadField(env),
+      ...markupField(options),
+      ...replyToField(options)
+    })
+    return yield* remember(env, message)
+  })
+
+/**
+ * Sends an animated dice (or other emoji) that shows a random value.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.replyDice({ emoji: "🎲" })
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const replyDice = (
+  options?: SendOptions & { readonly emoji?: string }
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const tg = yield* TelegramClient.TelegramClient
+    const message = yield* tg.sendDice({
+      chatId: env.chatId,
+      ...(options?.emoji !== undefined ? { emoji: options.emoji } : {}),
+      ...threadField(env),
+      ...markupField(options),
+      ...replyToField(options)
+    })
+    return yield* remember(env, message)
+  })
+
+// --- acting on the incoming message ------------------------------------------
+
+/**
+ * Deletes the message that produced the current update. Fails as a defect when the
+ * update carries no deletable message.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.deleteMessage
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const deleteMessage: Effect.Effect<
+  boolean,
+  TelegramError.TelegramError,
+  TelegramClient.TelegramClient
+> = Effect.gen(function* () {
+  const env = yield* UpdateContext.env
+  const messageId = currentMessageId(env.update)
+  if (messageId === undefined) {
+    return yield* Effect.die(new Error("fibergram: Chat.deleteMessage used on an update with no message"))
+  }
+  const tg = yield* TelegramClient.TelegramClient
+  return yield* tg.deleteMessage({ chatId: env.chatId, messageId })
+})
+
+/**
+ * Reacts to the incoming message with a single emoji.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.react("🔥")
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const react = (
+  emoji: string,
+  options?: { readonly isBig?: boolean }
+): Effect.Effect<boolean, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const messageId = currentMessageId(env.update)
+    if (messageId === undefined) {
+      return yield* Effect.die(new Error("fibergram: Chat.react used on an update with no message"))
+    }
+    const tg = yield* TelegramClient.TelegramClient
+    return yield* tg.setMessageReaction({
+      chatId: env.chatId,
+      messageId,
+      reaction: [{ type: "emoji", emoji }],
+      ...(options?.isBig !== undefined ? { isBig: options.isBig } : {})
+    })
+  })
+
+/**
+ * Forwards the incoming message to another chat.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.forwardTo(123456)
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const forwardTo = (
+  toChatId: number | string
+): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const messageId = currentMessageId(env.update)
+    if (messageId === undefined) {
+      return yield* Effect.die(new Error("fibergram: Chat.forwardTo used on an update with no message"))
+    }
+    const tg = yield* TelegramClient.TelegramClient
+    const message = yield* tg.forwardMessage({ chatId: toChatId, fromChatId: env.chatId, messageId })
+    return SentMessage.make(message)
+  })
+
+/**
+ * Copies the incoming message to another chat (no link back), returning the new
+ * message id.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.copyTo(123456)
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const copyTo = (
+  toChatId: number | string
+): Effect.Effect<BotApi.MessageId, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const messageId = currentMessageId(env.update)
+    if (messageId === undefined) {
+      return yield* Effect.die(new Error("fibergram: Chat.copyTo used on an update with no message"))
+    }
+    const tg = yield* TelegramClient.TelegramClient
+    return yield* tg.copyMessage({ chatId: toChatId, fromChatId: env.chatId, messageId })
+  })
+
+// --- callback & inline queries -----------------------------------------------
 
 /**
  * Options for {@link answerCallback}.
@@ -231,10 +830,110 @@ export const answerCallback = (
   })
 
 /**
- * Runs `effect` while a `"typing…"` indicator shows in the current chat, cleared
- * automatically when it finishes - a textbook `Scope`/`acquireRelease`.
- * Telegram expires the indicator after ~5s, so it is refreshed every
- * 4s; errors from the refresh are ignored so they never fail the wrapped work.
+ * Answers the inline query that produced the current update. Fails as a defect if
+ * the current update is not an inline query.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const handler = Effect.gen(function* () {
+ *   yield* Chat.answerInline([
+ *     { type: "article", id: "1", title: "Hi", inputMessageContent: { messageText: "Hi" } }
+ *   ])
+ * })
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const answerInline = (
+  results: ReadonlyArray<BotApi.InlineQueryResult>,
+  options?: { readonly cacheTime?: number; readonly isPersonal?: boolean }
+): Effect.Effect<boolean, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+  Effect.gen(function* () {
+    const env = yield* UpdateContext.env
+    const query = env.update.inlineQuery
+    if (query === undefined) {
+      return yield* Effect.die(new Error("fibergram: Chat.answerInline used on a non-inline-query update"))
+    }
+    const tg = yield* TelegramClient.TelegramClient
+    return yield* tg.answerInlineQuery({
+      inlineQueryId: query.id,
+      results,
+      ...(options?.cacheTime !== undefined ? { cacheTime: options.cacheTime } : {}),
+      ...(options?.isPersonal !== undefined ? { isPersonal: options.isPersonal } : {})
+    })
+  })
+
+// --- chat actions ------------------------------------------------------------
+
+/**
+ * A chat action indicator (`"typing"`, `"upload_photo"`, `"record_voice"`, ...).
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type ChatAction =
+  | "typing"
+  | "upload_photo"
+  | "record_video"
+  | "upload_video"
+  | "record_voice"
+  | "upload_voice"
+  | "upload_document"
+  | "choose_sticker"
+  | "find_location"
+  | "record_video_note"
+  | "upload_video_note"
+
+/**
+ * Runs `effect` while `action` shows in the current chat, cleared automatically
+ * when it finishes - a textbook `Scope`/`acquireRelease`. Telegram expires the
+ * indicator after ~5s, so it is refreshed every 4s; errors from the refresh are
+ * ignored so they never fail the wrapped work. {@link withTyping} is
+ * `withAction("typing")`.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const slow = Chat.withAction("upload_photo")(
+ *   Effect.gen(function* () {
+ *     yield* Effect.sleep("2 seconds")
+ *     yield* Chat.replyPhoto("file_id")
+ *   })
+ * )
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const withAction = (action: ChatAction) =>
+<A, E, R>(
+  effect: Effect.Effect<A, E, R>
+): Effect.Effect<A, E, R | TelegramClient.TelegramClient> =>
+  Effect.scoped(
+    Effect.gen(function* () {
+      const env = yield* UpdateContext.env
+      const tg = yield* TelegramClient.TelegramClient
+      // Errors from the indicator must never fail the wrapped work.
+      const tick = Effect.ignore(
+        tg.sendChatAction({
+          chatId: env.chatId,
+          action,
+          ...threadField(env)
+        })
+      )
+      // Show it immediately, then refresh before Telegram's ~5s expiry.
+      yield* tick
+      const refresh = Effect.forever(Effect.andThen(Effect.sleep(Duration.seconds(4)), tick))
+      yield* Effect.acquireRelease(Effect.forkChild(refresh), (fiber) => Fiber.interrupt(fiber))
+      return yield* effect
+    })
+  )
+
+/**
+ * Runs `effect` while a `"typing…"` indicator shows in the current chat. A
+ * shorthand for `Chat.withAction("typing")`.
  *
  * @example
  * import { Chat } from "@fibergram/core"
@@ -252,23 +951,4 @@ export const answerCallback = (
  */
 export const withTyping = <A, E, R>(
   effect: Effect.Effect<A, E, R>
-): Effect.Effect<A, E, R | TelegramClient.TelegramClient> =>
-  Effect.scoped(
-    Effect.gen(function* () {
-      const env = yield* UpdateContext.env
-      const tg = yield* TelegramClient.TelegramClient
-      // Errors from the indicator must never fail the wrapped work.
-      const action = Effect.ignore(
-        tg.sendChatAction({
-          chatId: env.chatId,
-          action: "typing",
-          ...(Option.isSome(env.threadId) ? { messageThreadId: env.threadId.value } : {})
-        })
-      )
-      // Show it immediately, then refresh before Telegram's ~5s expiry.
-      yield* action
-      const refresh = Effect.forever(Effect.andThen(Effect.sleep(Duration.seconds(4)), action))
-      yield* Effect.acquireRelease(Effect.forkChild(refresh), (fiber) => Fiber.interrupt(fiber))
-      return yield* effect
-    })
-  )
+): Effect.Effect<A, E, R | TelegramClient.TelegramClient> => withAction("typing")(effect)

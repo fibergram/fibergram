@@ -86,6 +86,20 @@ export * as UpdateContext from "./UpdateContext.js"
 export * as Chat from "./Chat.js"
 
 /**
+ * `SentMessage` - hydrated send results with `Effect` methods (`edit`/`delete`/...).
+ *
+ * @since 0.1.0
+ */
+export * as SentMessage from "./SentMessage.js"
+
+/**
+ * `MediaGroup` - an immutable album builder for `sendMediaGroup`.
+ *
+ * @since 0.1.0
+ */
+export * as MediaGroup from "./MediaGroup.js"
+
+/**
  * Typed `callback_data` codec plus the optional overflow store port.
  *
  * @since 0.1.0

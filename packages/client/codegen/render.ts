@@ -41,6 +41,16 @@ const encodeKeysBlock = (renames: ReadonlyArray<Rename>): string =>
 /** The `Schema` expression + decoded TS type for a single struct field. */
 const fieldSchemaTs = (model: Model.Model, f: RawField): { readonly schema: string; readonly ts: string } => {
   if (f.types.length === 1 && f.types[0] === "True") return { schema: "Schema.Literal(true)", ts: "true" }
+  // `InputMedia*`/`InputPaidMedia*` file fields (`media`/`thumbnail`/`cover`/...) are
+  // typed `String` in the spec but their prose documents multipart upload via
+  // `attach://`. Broaden them to `InputFile | String` so an `InputFile` can be nested
+  // in a media group and the transport seam can spot it (same shape method params get).
+  const isUploadableString = f.types.length === 1 && f.types[0] === "String" &&
+    /multipart\/form-data/.test(f.description ?? "")
+  if (isUploadableString) {
+    const types = ["InputFile", "String"]
+    return { schema: Model.schemaOf(model, types, "", true), ts: Model.tsOf(types, "") }
+  }
   const disc = f.types.length === 1 && f.types[0] === "String"
     ? DISCRIMINATOR_RE.exec(f.description ?? "")
     : null
@@ -241,8 +251,24 @@ export const renderAll = (spec: Spec): RenderResult => {
     ` * decoded \`Type\` is \`camelCase\`, its \`Encoded\` shape is the raw \`snake_case\` Telegram\n` +
     ` * speaks, wired via {@link Schema.encodeKeys}. Decoding is lenient — unknown fields drop.\n *\n` +
     ` * @since 0.1.0\n */\n` +
-    `import { Schema } from "effect"\n\n`
-  const typesContent = typesHeader + banner("") + typeDecls.join("\n")
+    `import { Schema } from "effect"\n\n` +
+    // Binds the generated `InputFile` schema to the hand-written module.
+    `import * as InputFileModule from "../InputFile.js"\n\n`
+  // Emitted before the structs so `InputMedia*` file fields can reference it. It is a
+  // passthrough guard: it accepts an `InputFile` value and leaves it untouched on
+  // encode, so the transport seam can spot it and switch to `multipart/form-data`.
+  const inputFileBlock =
+    `/**\n` +
+    ` * The contents of a file to be uploaded, as a tagged {@link module:InputFile.InputFile}\n` +
+    ` * value (path / bytes / stream / URL).\n *\n` +
+    ` * @category schemas\n * @since 0.1.0\n */\n` +
+    `export const InputFile: Schema.declare<InputFileModule.InputFile> = ` +
+    `Schema.declare<InputFileModule.InputFile>(\n` +
+    `  InputFileModule.isInputFile,\n  { title: "InputFile" }\n)\n\n` +
+    `/**\n * A file to upload — see {@link module:InputFile.InputFile}.\n *\n` +
+    ` * @category models\n * @since 0.1.0\n */\n` +
+    `export type InputFile = InputFileModule.InputFile\n\n`
+  const typesContent = typesHeader + banner("") + inputFileBlock + typeDecls.join("\n")
 
   const methodParams = methods.map((m) => renderMethodParams(model, m)).filter((s): s is string => s !== null)
   const methodsHeader =

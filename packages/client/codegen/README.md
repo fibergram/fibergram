@@ -82,6 +82,19 @@ It reads `api.json`, builds an internal model, and emits Effect Schemas:
 - **docgen gate.** Every generated export carries a `@since` tag (the only tag docgen
   enforces), plus a description and `@category`.
 
+### `InputFile`
+
+`InputFile` is not a real struct in the spec (it is in `SKIP_TYPES`), so the generator
+emits it by hand — near the **top** of `types.ts`, bound to the hand-written
+`../src/InputFile.js` module (`Schema.declare` passthrough guard). It must precede the
+structs because the broadened `InputMedia*` file fields reference it.
+
+Nested file fields (`InputMediaPhoto.media`, `InputMediaVideo.thumbnail`, ...) are typed
+`String` in the spec but their prose documents multipart upload via `attach://`. The
+renderer broadens any single-`String` field whose description mentions
+`multipart/form-data` to `Schema.Union([InputFile, Schema.String])`, so an `InputFile`
+can be nested in a media group and the transport seam can find it.
+
 ### Manual suffix
 
 Each generated file preserves everything from the marker line to EOF verbatim:
@@ -90,10 +103,10 @@ Each generated file preserves everything from the marker line to EOF verbatim:
 // === MANUAL — not regenerated below (codegen) ===
 ```
 
-Only `types.ts` currently has one — the opaque `InputFile` schema (listed in
-`SKIP_TYPES` in the generator; not a real struct in the spec). The transport itself
-(HTTP `call`, token, error mapping) lives by hand in `../src/TelegramClient.ts`, which
-consumes the generated `makeMethods` factory.
+The marker is currently a no-op tail (nothing below it); it stays so future by-hand
+additions survive regeneration. The transport itself (HTTP `call`, token, multipart
+switch, error mapping) lives by hand in `../src/TelegramClient.ts` and `../src/Multipart.ts`,
+which consume the generated `makeMethods` factory.
 
 ## Bumping the Bot API version
 

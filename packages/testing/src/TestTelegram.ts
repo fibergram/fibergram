@@ -12,7 +12,7 @@
  *
  * @since 0.1.0
  */
-import { Effect, Layer, Ref } from "effect"
+import { Effect, Layer, Ref, Stream } from "effect"
 
 import { TelegramClient } from "@fibergram/client"
 
@@ -86,6 +86,16 @@ const defaultResult = (
 ): Effect.Effect<unknown> => {
   // No network: long polling yields nothing, so tests feed synthetic updates.
   if (method === "getUpdates") return Effect.succeed<ReadonlyArray<BotApi.Update>>([])
+  if (method === "sendMediaGroup") {
+    const media = (params as { readonly media?: ReadonlyArray<unknown> }).media ?? [null]
+    return Effect.forEach(media, () => Effect.map(nextMessageId, (id) => synthMessage(id, params)))
+  }
+  // `getFileUrl` resolves to a plausible download URL for whichever file it was given.
+  if (method === "getFileUrl") {
+    const p = params as string | { readonly filePath?: string; readonly fileId?: string }
+    const key = typeof p === "string" ? p : (p.filePath ?? p.fileId ?? "file")
+    return Effect.succeed(`https://api.telegram.org/file/bottest/${key}`)
+  }
   if (MESSAGE_METHODS.has(method)) {
     return Effect.map(nextMessageId, (id) => synthMessage(id, params))
   }
@@ -106,6 +116,11 @@ export interface MakeOptions {
    * otherwise). Use it when a handler inspects a richer result, e.g. `getMe`.
    */
   readonly respond?: (method: string, params: unknown) => unknown
+  /**
+   * The bytes `downloadFile` streams back for a given file argument. Defaults to a
+   * small canned chunk so a handler that reads an incoming file keeps working.
+   */
+  readonly download?: (file: unknown) => Uint8Array
 }
 
 /**
@@ -172,16 +187,24 @@ export const makeWith = (options?: MakeOptions): Effect.Effect<TestTelegram> =>
       {
         get(_target, prop) {
           if (typeof prop !== "string") return
+          const record = (params: unknown) => Ref.update(log, (all) => [...all, { method: prop, params }])
+          // `downloadFile` returns a byte `Stream`, not an `Effect`, so it is handled apart.
+          if (prop === "downloadFile") {
+            return (params: unknown): Stream.Stream<Uint8Array> =>
+              Stream.unwrap(
+                Effect.as(
+                  record(params),
+                  Stream.make(options?.download?.(params) ?? Uint8Array.of(102, 105, 108, 101))
+                )
+              )
+          }
           return (params: unknown): Effect.Effect<unknown> =>
-            Effect.flatMap(
-              Ref.update(log, (all) => [...all, { method: prop, params }]),
-              () => {
-                const overridden = options?.respond?.(prop, params)
-                return overridden !== undefined
-                  ? Effect.succeed(overridden)
-                  : defaultResult(prop, params, nextMessageId)
-              }
-            )
+            Effect.flatMap(record(params), () => {
+              const overridden = options?.respond?.(prop, params)
+              return overridden !== undefined
+                ? Effect.succeed(overridden)
+                : defaultResult(prop, params, nextMessageId)
+            })
         }
       }
     ) as unknown as TelegramClient.TelegramClientService

@@ -11,23 +11,48 @@
  *
  * @since 0.1.0
  */
-import { Config, Context, Effect, Layer, Redacted, Schema } from "effect"
-import { HttpClient, HttpClientRequest } from "effect/unstable/http"
+import { Config, Context, Effect, Layer, Redacted, Schema, Stream } from "effect"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
+import * as NodeFs from "node:fs"
+import NodePath from "node:path"
 
 import * as BotApi from "./BotApi.js"
 import * as GeneratedClient from "./generated/client.js"
+import * as Multipart from "./Multipart.js"
 import * as TelegramError from "./TelegramError.js"
 
 const decodeResponse = Schema.decodeUnknownEffect(BotApi.ApiResponse)
 
 /**
- * The service shape: the full Bot API, generated from the spec. Each call is an
- * `Effect` whose only failure channel is the typed Telegram error union.
+ * File download helpers layered on top of the generated Bot API. `getFile` returns
+ * only a `file_path`; these resolve it to a ready URL and stream the bytes,
+ * accounting for the configured API origin and local Bot API server file paths.
  *
  * @category models
  * @since 0.1.0
  */
-export type TelegramClientService = GeneratedClient.TelegramClientService
+export interface FileApi {
+  /**
+   * Resolves a `file_id` (or a {@link module:BotApi.File}) to a downloadable URL,
+   * calling `getFile` first when the `file_path` is not already known.
+   */
+  readonly getFileUrl: (file: string | BotApi.File) => Effect.Effect<string, TelegramError.TelegramError>
+  /**
+   * Streams a file's bytes. Reads a local Bot API server's absolute file path from
+   * disk; otherwise `GET`s the download URL.
+   */
+  readonly downloadFile: (file: string | BotApi.File) => Stream.Stream<Uint8Array, TelegramError.TelegramError>
+}
+
+/**
+ * The service shape: the full Bot API generated from the spec, plus the
+ * hand-written file {@link FileApi}. Each call is an `Effect` whose only failure
+ * channel is the typed Telegram error union.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type TelegramClientService = GeneratedClient.TelegramClientService & FileApi
 
 /**
  * The `TelegramClient` service tag. `yield*` it inside any handler to reach the
@@ -45,7 +70,7 @@ export type TelegramClientService = GeneratedClient.TelegramClientService
  * @category services
  * @since 0.1.0
  */
-export class TelegramClient extends Context.Service<TelegramClient, GeneratedClient.TelegramClientService>()(
+export class TelegramClient extends Context.Service<TelegramClient, TelegramClientService>()(
   "@fibergram/client/TelegramClient"
 ) {}
 
@@ -82,7 +107,7 @@ export interface MakeOptions {
  */
 export const make = (
   options: MakeOptions
-): Effect.Effect<GeneratedClient.TelegramClientService, never, HttpClient.HttpClient> =>
+): Effect.Effect<TelegramClientService, never, HttpClient.HttpClient> =>
   Effect.gen(function* () {
     const httpClient = yield* HttpClient.HttpClient
     const token = typeof options.token === "string"
@@ -90,23 +115,27 @@ export const make = (
       : Redacted.value(options.token)
     const origin = options.apiBaseUrl ?? "https://api.telegram.org"
     const baseUrl = `${origin}/bot${token}`
+    const isLocalServer = options.apiBaseUrl !== undefined
 
     const transport = (method: string) =>
       (cause: unknown): TelegramError.TelegramError =>
         new TelegramError.TransportError({ method, cause })
 
-    // The single transport seam every generated method flows through.
+    // The single transport seam every generated method flows through. A payload
+    // carrying an uploaded `InputFile` switches from JSON to multipart/form-data.
     const call: GeneratedClient.Call = (method, paramsSchema, resultSchema, params) =>
       Effect.gen(function* () {
-        const body = paramsSchema === null
+        const encoded = paramsSchema === null
           ? {}
           : yield* Schema.encodeUnknownEffect(paramsSchema)(params).pipe(
             Effect.mapError(transport(method))
           )
+        const body = yield* Multipart.prepare(encoded)
 
-        const httpRequest = HttpClientRequest.post(`${baseUrl}/${method}`, {
-          acceptJson: true
-        }).pipe(HttpClientRequest.bodyJsonUnsafe(body))
+        const base = HttpClientRequest.post(`${baseUrl}/${method}`, { acceptJson: true })
+        const httpRequest = body._tag === "FormData"
+          ? base.pipe(HttpClientRequest.bodyFormData(body.formData))
+          : base.pipe(HttpClientRequest.bodyJsonUnsafe(body.json))
 
         const response = yield* httpClient
           .execute(httpRequest)
@@ -122,7 +151,53 @@ export const make = (
         )
       })
 
-    return GeneratedClient.makeMethods(call)
+    const methods = GeneratedClient.makeMethods(call)
+
+    // Resolve a file_id/File to its file_path, calling getFile only when needed.
+    const getFilePath = (
+      file: string | BotApi.File
+    ): Effect.Effect<string, TelegramError.TelegramError> => {
+      if (typeof file !== "string" && file.filePath !== undefined) {
+        return Effect.succeed(file.filePath)
+      }
+      const fileId = typeof file === "string" ? file : file.fileId
+      return methods.getFile({ fileId }).pipe(
+        Effect.flatMap((resolved) =>
+          resolved.filePath !== undefined
+            ? Effect.succeed(resolved.filePath)
+            : Effect.fail(transport("getFile")(new Error("Bot API returned no file_path")))
+        )
+      )
+    }
+
+    const getFileUrl = (file: string | BotApi.File): Effect.Effect<string, TelegramError.TelegramError> =>
+      Effect.map(getFilePath(file), (filePath) => `${origin}/file/bot${token}/${filePath}`)
+
+    const downloadFile = (
+      file: string | BotApi.File
+    ): Stream.Stream<Uint8Array, TelegramError.TelegramError> =>
+      Stream.unwrap(
+        Effect.map(getFilePath(file), (filePath) => {
+          // A local Bot API server hands back an absolute path to read from disk.
+          if (isLocalServer && NodePath.isAbsolute(filePath)) {
+            return Stream.unwrap(
+              Effect.map(
+                Effect.promise(() => NodeFs.openAsBlob(filePath)),
+                (blob) =>
+                  Stream.fromReadableStream<Uint8Array, TelegramError.TelegramError>({
+                    evaluate: () => blob.stream(),
+                    onError: transport("download")
+                  })
+              )
+            )
+          }
+          return HttpClientResponse.stream(httpClient.get(`${origin}/file/bot${token}/${filePath}`)).pipe(
+            Stream.mapError(transport("download"))
+          )
+        })
+      )
+
+    return { ...methods, getFileUrl, downloadFile }
   })
 
 /**
