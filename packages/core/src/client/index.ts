@@ -30,6 +30,14 @@ export * as TelegramError from "./TelegramError.js"
 export * as TelegramClient from "./TelegramClient.js"
 
 /**
+ * `Transform` - first-class interceptors over the outgoing-call seam (bot-wide
+ * defaults, throttling, auto-retry, logging, metrics).
+ *
+ * @since 0.1.0
+ */
+export * as Transform from "./Transform.js"
+
+/**
  * `InputFile` - files to upload (path / bytes / stream / URL).
  *
  * @since 0.1.0

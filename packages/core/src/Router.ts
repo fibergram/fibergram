@@ -21,11 +21,12 @@
  *
  * @since 0.1.0
  */
-import { Array as Arr, Effect, Option, Pipeable, Schema } from "effect"
+import { Array as Arr, Clock, Duration, Effect, Option, Pipeable, Ref, Schema } from "effect"
 
 import * as Chat from "./Chat.js"
 import { TelegramClient } from "./client/index.js"
 import * as Dialog from "./Dialog.js"
+import * as DialogAddress from "./DialogAddress.js"
 import * as Filter from "./Filter.js"
 import * as Hydrated from "./Hydrated.js"
 import * as Message from "./Message.js"
@@ -1034,6 +1035,84 @@ export interface ToDialogOptions<E, R> {
   readonly kind?: string
   /** Handler for updates no route matched; defaults to doing nothing. */
   readonly fallback?: (update: BotApi.Update) => Effect.Effect<void, E, R>
+  /**
+   * Inbound rate limiting: cap how many updates one key (default: the sender)
+   * may spend per window before routing them (the analogue of
+   * `@grammyjs/ratelimiter`). Over-limit updates are dropped, or handed to
+   * {@link RateLimitOptions.onLimit}. Applied before route matching, so every
+   * dispatched update counts.
+   */
+  readonly rateLimit?: RateLimitOptions<E, R>
+}
+
+/**
+ * Options for the inbound rate limiter ({@link ToDialogOptions.rateLimit}).
+ * Counts updates per key in fixed windows: at most `limit` updates per `window`.
+ *
+ * @example
+ * import { Router } from "@fibergram/core"
+ * import { Duration } from "effect"
+ *
+ * const opts: Router.RateLimitOptions<never, never> = { limit: 5, window: Duration.seconds(10) }
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface RateLimitOptions<E, R> {
+  /** Max updates allowed per `window` for one key. */
+  readonly limit: number
+  /** The fixed window each key's allowance resets over. */
+  readonly window: Duration.Duration
+  /**
+   * The bucket key for an update; `undefined` exempts it from limiting. Defaults
+   * to the sender's id ({@link module:DialogAddress.identityOf}'s `fromId`).
+   */
+  readonly key?: (update: BotApi.Update) => string | number | undefined
+  /**
+   * What to do with an over-limit update. Defaults to dropping it silently;
+   * supply a handler to reply (e.g. "slow down") instead.
+   */
+  readonly onLimit?: (update: BotApi.Update) => Effect.Effect<void, E, R>
+}
+
+const defaultRateLimitKey = (update: BotApi.Update): number | undefined =>
+  Option.getOrUndefined(Option.flatMap(DialogAddress.identityOf(update), (id) => Option.fromNullishOr(id.fromId)))
+
+interface Window {
+  readonly count: number
+  readonly startedAt: number
+}
+
+/**
+ * Builds the effectful gate for {@link ToDialogOptions.rateLimit}: given a key,
+ * decides whether this update is within the current window's allowance,
+ * advancing the fixed-window counter. Keyless updates always pass.
+ */
+const makeRateLimitGate = <E, R>(
+  options: RateLimitOptions<E, R>
+): ((update: BotApi.Update) => Effect.Effect<boolean>) => {
+  const windowMs = Duration.toMillis(options.window)
+  const keyOf = options.key ?? defaultRateLimitKey
+  const windows = Ref.makeUnsafe(new Map<string, Window>())
+  return (update) => {
+    const rawKey = keyOf(update)
+    if (rawKey === undefined) return Effect.succeed(true)
+    const key = String(rawKey)
+    return Clock.currentTimeMillis.pipe(
+      Effect.flatMap((now) =>
+        Ref.modify(windows, (map) => {
+          const current = map.get(key)
+          const fresh = current === undefined || now - current.startedAt >= windowMs
+          const next: Window = fresh
+            ? { count: 1, startedAt: now }
+            : { count: current.count + 1, startedAt: current.startedAt }
+          const allowed = next.count <= options.limit
+          const updated = new Map(map)
+          updated.set(key, next)
+          return [allowed, updated]
+        }))
+    )
+  }
 }
 
 /**
@@ -1057,12 +1136,19 @@ export interface ToDialogOptions<E, R> {
 export const toHandler = <E, R>(
   router: Router<E, R>,
   options?: ToDialogOptions<E, R>
-): ((update: BotApi.Update) => Effect.Effect<void, E, R>) =>
-(update) =>
-  Option.getOrElse(
-    Arr.findFirst(router.routes, (candidate) => candidate.match(update)),
-    () => (options?.fallback !== undefined ? options.fallback(update) : Effect.void)
-  )
+): ((update: BotApi.Update) => Effect.Effect<void, E, R>) => {
+  const dispatch = (update: BotApi.Update): Effect.Effect<void, E, R> =>
+    Option.getOrElse(
+      Arr.findFirst(router.routes, (candidate) => candidate.match(update)),
+      () => (options?.fallback !== undefined ? options.fallback(update) : Effect.void)
+    )
+  if (options?.rateLimit === undefined) return dispatch
+  const rateLimit = options.rateLimit
+  const gate = makeRateLimitGate(rateLimit)
+  const onLimit = rateLimit.onLimit ?? ((): Effect.Effect<void, E, R> => Effect.void)
+  return (update) =>
+    Effect.flatMap(gate(update), (allowed) => (allowed ? dispatch(update) : onLimit(update)))
+}
 
 /**
  * Turns a router into a stateless {@link module:Dialog.Dialog} the

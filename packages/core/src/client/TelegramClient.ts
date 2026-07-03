@@ -20,6 +20,7 @@ import * as BotApi from "./BotApi.js"
 import * as GeneratedClient from "./generated/client.js"
 import * as Multipart from "./Multipart.js"
 import * as TelegramError from "./TelegramError.js"
+import * as Transform from "./Transform.js"
 
 const decodeResponse = Schema.decodeUnknownEffect(BotApi.ApiResponse)
 
@@ -85,6 +86,12 @@ export interface MakeOptions {
   readonly token: Redacted.Redacted<string> | string
   /** Override the API origin (e.g. a local Bot API server or a test double). */
   readonly apiBaseUrl?: string
+  /**
+   * Outgoing-call interceptors installed over the transport seam, first =
+   * outermost (see {@link module:Transform}). Use for bot-wide defaults,
+   * throttling, auto-retry, logging and metrics.
+   */
+  readonly transforms?: ReadonlyArray<Transform.Transform>
 }
 
 /**
@@ -151,7 +158,10 @@ export const make = (
         )
       })
 
-    const methods = GeneratedClient.makeMethods(call)
+    const transforms = options.transforms ?? []
+    const methods = GeneratedClient.makeMethods(
+      transforms.length === 0 ? call : Transform.applyAll(transforms, call)
+    )
 
     // Resolve a file_id/File to its file_path, calling getFile only when needed.
     const getFilePath = (
@@ -239,4 +249,33 @@ export const layer: Layer.Layer<TelegramClient, Config.ConfigError, HttpClient.H
   Layer.effect(
     TelegramClient,
     Effect.flatMap(Config.redacted("BOT_TOKEN"), (token) => make({ token }))
+  )
+
+/**
+ * A `Layer` providing {@link TelegramClient} with the given outgoing-call
+ * {@link module:Transform}s installed over the transport seam, reading the token
+ * from `BOT_TOKEN`. The connection-time analogue of `make({ transforms })`: set
+ * bot-wide defaults, throttling and auto-retry once at the edge. Wire an
+ * `HttpClient` underneath.
+ *
+ * @example
+ * import { TelegramClient, Transform } from "@fibergram/core/client"
+ * import { Layer } from "effect"
+ * import { FetchHttpClient } from "effect/unstable/http"
+ *
+ * const layer = TelegramClient.transformed(
+ *   Transform.defaults({ parseMode: "HTML" }),
+ *   Transform.throttle(),
+ *   Transform.autoRetry()
+ * ).pipe(Layer.provide(FetchHttpClient.layer))
+ *
+ * @category layers
+ * @since 0.1.0
+ */
+export const transformed = (
+  ...transforms: ReadonlyArray<Transform.Transform>
+): Layer.Layer<TelegramClient, Config.ConfigError, HttpClient.HttpClient> =>
+  Layer.effect(
+    TelegramClient,
+    Effect.flatMap(Config.redacted("BOT_TOKEN"), (token) => make({ token, transforms }))
   )

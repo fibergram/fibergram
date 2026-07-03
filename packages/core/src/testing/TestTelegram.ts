@@ -14,7 +14,8 @@
  */
 import { Effect, Layer, Ref, Stream } from "effect"
 
-import { TelegramClient } from "../client/index.js"
+import * as GeneratedClient from "../client/generated/client.js"
+import { TelegramClient, Transform } from "../client/index.js"
 
 import type { BotApi} from "../client/index.js";
 
@@ -121,6 +122,13 @@ export interface MakeOptions {
    * small canned chunk so a handler that reads an incoming file keeps working.
    */
   readonly download?: (file: unknown) => Uint8Array
+  /**
+   * Outgoing-call {@link module:Transform}s to install over the recorder, first =
+   * outermost. Because the double sits on the same `call` seam, the whole stack
+   * runs under test - a `Transform.defaults` injects into the recorded params, a
+   * `Transform.throttle` sleeps on the ambient `TestClock`.
+   */
+  readonly transforms?: ReadonlyArray<Transform.Transform>
 }
 
 /**
@@ -181,33 +189,46 @@ export const makeWith = (options?: MakeOptions): Effect.Effect<TestTelegram> =>
     const log = yield* Ref.make<ReadonlyArray<RecordedCall>>([])
     const counter = yield* Ref.make(1000)
     const nextMessageId = Ref.updateAndGet(counter, (n) => n + 1)
+    const record = (method: string, params: unknown) =>
+      Ref.update(log, (all) => [...all, { method, params }])
 
-    const service = new Proxy(
-      {},
-      {
-        get(_target, prop) {
-          if (typeof prop !== "string") return
-          const record = (params: unknown) => Ref.update(log, (all) => [...all, { method: prop, params }])
-          // `downloadFile` returns a byte `Stream`, not an `Effect`, so it is handled apart.
-          if (prop === "downloadFile") {
-            return (params: unknown): Stream.Stream<Uint8Array> =>
-              Stream.unwrap(
-                Effect.as(
-                  record(params),
-                  Stream.make(options?.download?.(params) ?? Uint8Array.of(102, 105, 108, 101))
-                )
-              )
-          }
-          return (params: unknown): Effect.Effect<unknown> =>
-            Effect.flatMap(record(params), () => {
-              const overridden = options?.respond?.(prop, params)
-              return overridden !== undefined
-                ? Effect.succeed(overridden)
-                : defaultResult(prop, params, nextMessageId)
-            })
-        }
-      }
-    ) as unknown as TelegramClient.TelegramClientService
+    // The recorder sits on the exact `call` seam the real client uses, so an
+    // installed transform stack (defaults, throttle, ...) wraps it just as it
+    // would in production. It skips the schema round-trip: params are captured in
+    // `camelCase` and a canned result is returned undecoded.
+    const recordingCall = ((method, _paramsSchema, _resultSchema, params) =>
+      Effect.flatMap(record(method, params), () => {
+        const overridden = options?.respond?.(method, params)
+        return overridden !== undefined
+          ? Effect.succeed(overridden)
+          : defaultResult(method, params, nextMessageId)
+      })) as GeneratedClient.Call
+
+    const transforms = options?.transforms ?? []
+    const methods = GeneratedClient.makeMethods(
+      transforms.length === 0 ? recordingCall : Transform.applyAll(transforms, recordingCall)
+    )
+
+    // `getFileUrl`/`downloadFile` are hand-written on the real client, not
+    // generated methods, so they are recorded and canned here rather than routed
+    // through `call`.
+    const getFileUrl = (file: unknown): Effect.Effect<string> =>
+      Effect.flatMap(record("getFileUrl", file), () => {
+        const overridden = options?.respond?.("getFileUrl", file)
+        if (typeof overridden === "string") return Effect.succeed(overridden)
+        const p = file as string | { readonly filePath?: string; readonly fileId?: string }
+        const key = typeof p === "string" ? p : (p.filePath ?? p.fileId ?? "file")
+        return Effect.succeed(`https://api.telegram.org/file/bottest/${key}`)
+      })
+    const downloadFile = (file: unknown): Stream.Stream<Uint8Array> =>
+      Stream.unwrap(
+        Effect.as(
+          record("downloadFile", file),
+          Stream.make(options?.download?.(file) ?? Uint8Array.of(102, 105, 108, 101))
+        )
+      )
+
+    const service = { ...methods, getFileUrl, downloadFile } as unknown as TelegramClient.TelegramClientService
 
     const callsTo = (method: string): Effect.Effect<ReadonlyArray<unknown>> =>
       Effect.map(Ref.get(log), (all) => all.filter((c) => c.method === method).map((c) => c.params))
