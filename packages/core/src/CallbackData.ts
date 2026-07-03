@@ -1,11 +1,11 @@
 /**
- * `CallbackData` - the typed codec for inline-button payloads (design section 5.3,
- * the "killer feature"). Telegram gives every inline button a ≤64-byte
+ * `CallbackData` - the typed codec for inline-button payloads (the
+ * "killer feature"). Telegram gives every inline button a ≤64-byte
  * `callback_data` string and echoes it back on tap; `CallbackData` turns that
  * opaque string into an encode/decode pair over a `Schema`, so buttons carry
  * typed values and routing is a `decode`, not string-splitting.
  *
- * **Overflow (section 11.4).** A payload that does not fit in 64 bytes fails with
+ * **Overflow.** A payload that does not fit in 64 bytes fails with
  * {@link CallbackDataTooLong} **by default**. Provide a {@link CallbackStore}
  * layer and overflow transparently spills to it: the button carries a short key,
  * `decode` reads the value back. The store is an *optional* port - codecs that
@@ -39,7 +39,7 @@ const byteLength = (value: string): number => {
 
 /**
  * Raised when an encoded payload exceeds 64 bytes and no {@link CallbackStore} is
- * available to spill it to (design section 11.4).
+ * available to spill it to.
  *
  * @category errors
  * @since 0.1.0
@@ -63,7 +63,7 @@ export class CallbackDataMalformed extends Data.TaggedError("CallbackDataMalform
 }> {}
 
 /**
- * The optional overflow port (design section 11.4). A tiny key/value store: `put`
+ * The optional overflow port. A tiny key/value store: `put`
  * stashes an oversized payload and returns a short key; `get` reads it back.
  * Provide {@link layerMemory} in tests, a Redis/KV-backed layer in production.
  *

@@ -1,6 +1,6 @@
 /**
- * `Updates` - factories for synthetic `Update`s to feed a bot in tests (design
- * section 5.6). Instead of hand-writing nested Bot API JSON, build a text,
+ * `Updates` - factories for synthetic `Update`s to feed a bot in tests.
+ * Instead of hand-writing nested Bot API JSON, build a text,
  * command or callback update from a few fields and stream it into
  * `Dispatcher.run` - no network, no live Telegram.
  *

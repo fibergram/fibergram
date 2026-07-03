@@ -1,5 +1,5 @@
 /**
- * Fastify adapter for {@link module:Webhook.Webhook} (design section 7.1). A thin
+ * Fastify adapter for {@link module:Webhook.Webhook}. A thin
  * bridge - it rebuilds a web-standard `Request` from the fastify request and
  * replies with the status `Webhook.handle` returns; all validation and decoding
  * stay in the core. `fastify` is an optional peer dependency imported for types

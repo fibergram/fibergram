@@ -6,7 +6,7 @@ import { describe, expect } from "vitest"
 import { Webhook } from "@fibergram/webhook"
 
 // Webhook bodies arrive as raw Bot API JSON - snake_case, decoded to camelCase
-// at the client edge (section 5.3). So the fixtures are snake_case on purpose.
+// at the client edge. So the fixtures are snake_case on purpose.
 const updateJson = (id: number, text: string): string =>
   JSON.stringify({
     update_id: id,
@@ -31,7 +31,7 @@ const withSecret = (token: string, body: string): Request =>
 const serverRequest = (body: string, headers?: Record<string, string>) =>
   HttpServerRequest.fromWeb(request(body, headers))
 
-describe("Webhook ingestion (section 7.1)", () => {
+describe("Webhook ingestion", () => {
   describe("handle - framework-agnostic (web Request/Response)", () => {
     it.effect("accepts a validly-signed update: 200 + decoded update on the stream", () =>
       Effect.gen(function* () {
@@ -119,7 +119,7 @@ describe("Webhook ingestion (section 7.1)", () => {
       }).pipe(Effect.scoped))
   })
 
-  describe("durable-ack - persist before ack (section 7.2)", () => {
+  describe("durable-ack - persist before ack", () => {
     it.effect("persists, enqueues and answers 200 on success", () =>
       Effect.gen(function* () {
         const persisted = yield* Ref.make<ReadonlyArray<number>>([])

@@ -1,5 +1,5 @@
 /**
- * `@fibergram/testing` - run the whole bot without a network (design section 5.6).
+ * `@fibergram/testing` - run the whole bot without a network.
  * A recording `TelegramClient` double ({@link module:TestTelegram}) captures
  * outbound calls so a test asserts *"the handler sent X"*, {@link module:Updates}
  * builds synthetic updates to feed in, and `@effect/vitest`'s `TestClock` cranks

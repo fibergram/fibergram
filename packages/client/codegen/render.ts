@@ -237,7 +237,7 @@ export const renderAll = (spec: Spec): RenderResult => {
 
   const typesHeader =
     `/**\n * Bot API object schemas, generated from the Telegram Bot API spec.\n *\n` +
-    ` * This is the **only** place \`snake_case\` is allowed (design §5.3): each schema's\n` +
+    ` * This is the **only** place \`snake_case\` is allowed: each schema's\n` +
     ` * decoded \`Type\` is \`camelCase\`, its \`Encoded\` shape is the raw \`snake_case\` Telegram\n` +
     ` * speaks, wired via {@link Schema.encodeKeys}. Decoding is lenient — unknown fields drop.\n *\n` +
     ` * @since 0.1.0\n */\n` +

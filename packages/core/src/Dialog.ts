@@ -1,12 +1,12 @@
 /**
- * `Dialog` - the decider primitive (design section 4.3, D2). A dialog is `(state,
+ * `Dialog` - the decider primitive (D2). A dialog is `(state,
  * update) => Effect<Decision>` plus a pure `reduce` folding emitted events into
  * the next state. This is the public "bottom": full control, replayable. The
  * coroutine DSL elaborates *into* this shape.
  *
  * The requirement channel `R` stays open: a handler `yield*`s whatever services
  * it needs (`TelegramClient`, a `UserRepo`, ...), provided once at the edge
- * (design section 5.1).
+ *.
  *
  * @since 0.1.0
  */

@@ -12,6 +12,12 @@
   "references": [
     {
       "path": "../core"
+    },
+    {
+      "path": "../client"
+    },
+    {
+      "path": "../testing"
     }
   ]
 }

@@ -1,6 +1,0 @@
-import './src-TestTelegram.ts-constant-make-0'
-import './src-TestTelegram.ts-function-makeWith-0'
-import './src-Updates.ts-function-text-0'
-import './src-Updates.ts-function-command-0'
-import './src-Updates.ts-function-callback-0'
-import './src-Updates.ts-function-stream-0'

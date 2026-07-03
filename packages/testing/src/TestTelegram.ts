@@ -1,12 +1,12 @@
 /**
  * `TestTelegram` - a recording `TelegramClient` double that runs the whole bot
- * **without a network** (design section 5.6). Every
+ * **without a network**. Every
  * outbound Bot API call is captured, so a test asserts *"the handler sent X"*
  * instead of intercepting HTTP; each call gets a plausible canned response so
  * handler code (e.g. `Chat.editLast`, which reads back a `messageId`) keeps
  * working.
  *
- * It is the `Layer.mock(TelegramClient)` of design section 5.6: provide
+ * It is the `Layer.mock(TelegramClient)` of the design: provide
  * {@link TestTelegram.layer} at the edge and no method ever reaches
  * `api.telegram.org`.
  *

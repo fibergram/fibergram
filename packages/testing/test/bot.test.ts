@@ -9,7 +9,7 @@ import { TestTelegram, Updates } from "../src/index.js"
 
 // An echo bot: replies to every text update with the same text. Its only
 // requirement is `TelegramClient`, satisfied by the TestTelegram layer — the
-// whole bot runs with no network (design §5.6).
+// whole bot runs with no network.
 const echo = Dialog.stateless({
   onUpdate: (update) =>
     Effect.gen(function* () {

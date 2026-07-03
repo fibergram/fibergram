@@ -1,7 +1,7 @@
 /**
  * `@fibergram/client` - `TelegramClient` (Tag + Layer over `HttpClient`) plus
  * the Bot API edge schemas. This package owns the `snake_case <-> camelCase`
- * boundary (design section 5.3) and the typed Telegram error union (section 5.2); everything
+ * boundary and the typed Telegram error union; everything
  * else in fibergram builds on top of it.
  *
  * @since 0.1.0

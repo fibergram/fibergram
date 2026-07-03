@@ -1,7 +1,7 @@
 /**
  * `TelegramClient` - a `Context.Service` (Tag + Layer) over the Effect
- * `HttpClient` (design section 6). The volatile HTTP perimeter sits behind this port;
- * the domain talks to the port, never to `fetch` (design section 9).
+ * `HttpClient`. The volatile HTTP perimeter sits behind this port;
+ * the domain talks to the port, never to `fetch`.
  *
  * The method surface ({@link TelegramClientService}) is **generated** from the Bot
  * API spec (`./generated/client`) - every Bot API method, fully typed. Only the
@@ -147,7 +147,7 @@ export const layerToken = (
 
 /**
  * A `Layer` providing {@link TelegramClient}, reading the bot token from the
- * `BOT_TOKEN` environment variable via `Config.redacted` (design section 5.3, D5).
+ * `BOT_TOKEN` environment variable via `Config.redacted` (D5).
  * Wire an `HttpClient` underneath.
  *
  * @example

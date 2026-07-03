@@ -1,6 +1,6 @@
 /**
  * `@fibergram/polling` - long-polling ingestion. A producer into the shared
- * `Queue<Update>` the dispatcher drains (design section 7); it depends only on
+ * `Queue<Update>` the dispatcher drains; it depends only on
  * `@fibergram/client`, never on the dialog engine.
  *
  * @since 0.1.0

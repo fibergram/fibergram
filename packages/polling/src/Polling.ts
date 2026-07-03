@@ -1,12 +1,12 @@
 /**
- * Long-polling ingestion (design section 7). The transport is just a **producer into a
+ * Long-polling ingestion. The transport is just a **producer into a
  * shared `Queue<Update>`**; the dispatcher drains `Stream.fromQueue`. Ingestion
- * knows nothing about handlers, and handlers know nothing about the transport - * which is exactly what makes webhook a drop-in second producer later (section 7.1).
+ * knows nothing about handlers, and handlers know nothing about the transport - * which is exactly what makes webhook a drop-in second producer later.
  *
  * **Offset management.** `getUpdates(offset)` needs the offset committed so the
  * same update is not fetched twice. We commit `highest updateId + 1` *after*
  * enqueueing the batch; a crash between enqueue and commit re-fetches, and dedup
- * by `updateId` (design section 13.5) makes that reprocessing harmless - at-least-once
+ * by `updateId` makes that reprocessing harmless - at-least-once
  * fetch + idempotent processing ~ exactly-once.
  *
  * **Durability.** By default the offset lives in an in-memory `Ref` and resets on
@@ -27,7 +27,7 @@ import type { Scope, Stream } from "effect"
 const emptyUpdates: ReadonlyArray<BotApi.Update> = []
 
 /**
- * A durable home for the polling offset (design section 7, M4). Implement it over
+ * A durable home for the polling offset (M4). Implement it over
  * whatever store survives a restart (a file, Redis, a row) and pass it to
  * {@link make}; `load` seeds the initial offset on start, `commit` persists
  * `highest updateId + 1` after each batch is enqueued. Both must be `R = never` -

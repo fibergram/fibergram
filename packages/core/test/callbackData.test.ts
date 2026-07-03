@@ -6,7 +6,7 @@ import { CallbackData } from "@fibergram/core"
 
 const Vote = CallbackData.make("vote", Schema.Struct({ id: Schema.Number, up: Schema.Boolean }))
 
-describe("CallbackData codec (§5.3)", () => {
+describe("CallbackData codec", () => {
   it.effect("round-trips a value through encode/decode inline", () =>
     Effect.gen(function* () {
       const data = yield* Vote.encode({ id: 42, up: true })
@@ -24,14 +24,14 @@ describe("CallbackData codec (§5.3)", () => {
       expect(Option.isNone(Vote.parse("other:1"))).toBe(true)
     }))
 
-  it.effect("fails CallbackDataTooLong on overflow when no store is provided (§11.4)", () =>
+  it.effect("fails CallbackDataTooLong on overflow when no store is provided", () =>
     Effect.gen(function* () {
       const Big = CallbackData.make("big", Schema.Struct({ text: Schema.String }))
       const error = yield* Effect.flip(Big.encode({ text: "x".repeat(200) }))
       expect(error._tag).toBe("CallbackDataTooLong")
     }))
 
-  it.effect("spills to CallbackStore on overflow and decodes back (§11.4)", () =>
+  it.effect("spills to CallbackStore on overflow and decodes back", () =>
     Effect.gen(function* () {
       const Big = CallbackData.make("big", Schema.Struct({ text: Schema.String }))
       const value = { text: "x".repeat(200) }

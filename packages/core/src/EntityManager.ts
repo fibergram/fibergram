@@ -1,5 +1,5 @@
 /**
- * `EntityManager` - the virtual-actor runtime (design section 4.1, section 8). It routes each
+ * `EntityManager` - the virtual-actor runtime. It routes each
  * update to its dialog address, guarantees **one mailbox per address** (ordering
  * within an address), runs address mailboxes on independent fibers (concurrency
  * between addresses), and wraps each address in `catchCause` so **a crash in one
@@ -15,6 +15,7 @@ import { Effect, HashMap, Latch, Option, Queue, Ref } from "effect"
 import { Dedup } from "./Dedup.js"
 import * as DialogAddress from "./DialogAddress.js"
 import { DialogStore } from "./DialogStore.js"
+import * as Telemetry from "./Telemetry.js"
 import * as UpdateContext from "./UpdateContext.js"
 
 import type { Dialog } from "./Dialog.js"
@@ -24,7 +25,7 @@ import type { Cause , Scope } from "effect"
 /**
  * The manager's public surface: hand it an update and it routes, dedups, orders
  * and supervises. `send` is intended to be driven sequentially by one dispatcher
- * (design section 7); ordering within an address depends on that.
+ *; ordering within an address depends on that.
  *
  * @category models
  * @since 0.1.0
@@ -34,7 +35,7 @@ export interface EntityManager {
   /**
    * Completes once every accepted update has been fully processed. In
    * production the ingestion stream never ends, so this is mainly a test seam
-   * for asserting on effects after feeding a finite batch (design section 5.6).
+   * for asserting on effects after feeding a finite batch.
    */
   readonly awaitIdle: Effect.Effect<void>
 }
@@ -104,7 +105,7 @@ export const make = <State, Event, E, R>(
           onSome: (persisted) => persisted as State
         })
         // Stamp the per-update ambient env so `Chat.*` accessors resolve to this
-        // chat, both while deciding and while running the resulting effects (section 5.1).
+        // chat, both while deciding and while running the resulting effects.
         const env = yield* UpdateContext.fromAddress(address, update)
         const decision = yield* options.dialog.decide(state, update).pipe(
           UpdateContext.provide(env)
@@ -122,6 +123,7 @@ export const make = <State, Event, E, R>(
       update: BotApi.Update
     ): Effect.Effect<void> =>
       processOne(address, update).pipe(
+        Telemetry.instrument(address, update),
         Effect.catchCause((cause) =>
           options.onDefect
             ? options.onDefect(address, cause)

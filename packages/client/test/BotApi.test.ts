@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import { BotApi, TelegramError } from "@fibergram/client"
 
-describe("BotApi naming boundary (section 5.3)", () => {
+describe("BotApi naming boundary", () => {
   it("decodes snake_case wire fields into camelCase", () => {
     const update = Schema.decodeUnknownSync(BotApi.Update)({
       update_id: 7,
@@ -101,7 +101,7 @@ describe("BotApi naming boundary (section 5.3)", () => {
   })
 })
 
-describe("TelegramError.fromResponse (section 5.2)", () => {
+describe("TelegramError.fromResponse", () => {
   it("maps 429 to RateLimited carrying retry_after as a Duration", () => {
     const error = TelegramError.fromResponse("sendMessage", {
       errorCode: 429,

@@ -10,7 +10,7 @@ import * as TestTelegram from "./TestTelegram.js"
 import type { BotApi, TelegramClient, TelegramError } from "@fibergram/client"
 import type { Dialog} from "@fibergram/core";
 
-// The §4.3 registration wizard, written as a coroutine.
+// The registration wizard, written as a coroutine.
 const Age = Schema.NumberFromString.check(Schema.isBetween({ minimum: 0, maximum: 150 }))
 
 const registration = Coroutine.make("registration", function* (d) {
@@ -62,7 +62,7 @@ const decideWith = <A>(
 const texts = (tg: TestTelegram.TestTelegram) =>
   Effect.map(Ref.get(tg.sent), (sent) => sent.map((s) => s.text))
 
-describe("Coroutine — registration wizard (§4.3)", () => {
+describe("Coroutine — registration wizard", () => {
   it.effect("prompts step by step and completes with the collected answers", () =>
     Effect.gen(function* () {
       const tg = yield* TestTelegram.make
@@ -93,7 +93,7 @@ describe("Coroutine — registration wizard (§4.3)", () => {
       ])
     }))
 
-  it.effect("does not re-send prompts on replay after completion (determinism §13.2)", () =>
+  it.effect("does not re-send prompts on replay after completion (determinism)", () =>
     Effect.gen(function* () {
       const tg = yield* TestTelegram.make
       yield* run(tg, [
@@ -126,7 +126,7 @@ describe("Coroutine — registration wizard (§4.3)", () => {
     }))
 })
 
-describe("Coroutine — durable activity (d.run) and divergence guard (§13.2)", () => {
+describe("Coroutine — durable activity (d.run) and divergence guard", () => {
   it.effect("records a d.run result that a later `if` branches on deterministically", () =>
     Effect.gen(function* () {
       const tg = yield* TestTelegram.make
@@ -190,7 +190,7 @@ describe("Coroutine — durable activity (d.run) and divergence guard (§13.2)",
     }))
 })
 
-describe("Coroutine — effect ordering and composition (§4.3)", () => {
+describe("Coroutine — effect ordering and composition", () => {
   it.effect("performs reply/effect/run in program order, not run-first", () =>
     Effect.gen(function* () {
       const tg = yield* TestTelegram.make

@@ -31,7 +31,7 @@ const post = (url: string, body: string, headers: Record<string, string>) =>
   Effect.promise(() =>
     fetch(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body }))
 
-describe("Fastify adapter (section 7.1)", () => {
+describe("Fastify adapter", () => {
   it.live("bridges a validly-signed update through fastify's parser: 200 + enqueued", () =>
     Effect.gen(function* () {
       const webhook = yield* Webhook.make({ secretToken: "s3cret" })

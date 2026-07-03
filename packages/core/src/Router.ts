@@ -1,5 +1,5 @@
 /**
- * `Router` - the update-routing layer (design section 11.1). It resolves the
+ * `Router` - the update-routing layer. It resolves the
  * open question of *how* to shape the routing API by taking both sides:
  *
  * - a **handler-style core** ({@link Route} + {@link Router}), where a route is a
@@ -11,7 +11,7 @@
  *   arrive already typed (the `HttpApi` feel), while desugaring into the very
  *   same `Route`.
  *
- * The hard part (design section 11.3) is **requirement accumulation**: a router
+ * The hard part is **requirement accumulation**: a router
  * built from a heterogeneous list of routes must accumulate every route's `R`
  * (and `E`) at the type level - exactly as `HttpApi` accumulates requirements -
  * so the finished bot exposes one precise union and is satisfied by one `Layer`
@@ -49,7 +49,7 @@ export interface Route<out E, out R> {
 /**
  * An ordered collection of {@link Route}s. Its `E`/`R` are the union of every
  * contained route's - the type-level accumulation of requirements that keeps the
- * finished bot satisfiable by a single edge `Layer` (design section 11.3).
+ * finished bot satisfiable by a single edge `Layer`.
  *
  * @category models
  * @since 0.1.0
@@ -195,7 +195,7 @@ export const callback = <A, E, R>(
 
 /**
  * Appends `route` to `self`, **widening** both channels by union. This is the
- * accumulator at the heart of the §11.3 PoC: chaining routes with different
+ * accumulator at the heart of the PoC: chaining routes with different
  * requirements grows one precise `R` union with no `any` in sight.
  *
  * @example
@@ -237,7 +237,7 @@ export const concat =
 /**
  * Builds a router from routes in one shot, accumulating their `E`/`R` unions.
  * The variadic sugar over {@link empty} + {@link add}; the type inference proves
- * the §11.3 accumulation - `make(a, b, c)` has `R = R_a | R_b | R_c`.
+ * the accumulation - `make(a, b, c)` has `R = R_a | R_b | R_c`.
  *
  * @example
  * import { Router, Command, CallbackData, Chat } from "@fibergram/core"
@@ -306,7 +306,7 @@ export const toHandler = <E, R>(
  * Turns a router into a stateless {@link module:Dialog.Dialog} the
  * {@link module:Dispatcher} can run: every update is dispatched to the first
  * matching route. The dialog carries the router's accumulated `E`/`R`, so the
- * whole bot is provided by one `Layer` at the edge (design section 5.1).
+ * whole bot is provided by one `Layer` at the edge.
  *
  * @example
  * import { Router, Dispatcher, DialogStore, Dedup, Chat } from "@fibergram/core"

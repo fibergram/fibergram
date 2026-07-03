@@ -1,6 +1,6 @@
 /**
  * `UpdateContext` - the per-update ambient state that dissolves the `ctx`
- * god-object (design section 5.1). Instead of threading a mutable context object
+ * god-object. Instead of threading a mutable context object
  * through handlers, the dispatcher stamps a {@link UpdateEnv} onto a
  * `Context.Reference` before running the handler; free accessor functions (the
  * {@link module:Chat} namespace) read it back.

@@ -84,7 +84,7 @@ describe("Dispatcher + EntityManager", () => {
       ])
     }))
 
-  it.effect("drops updates with a duplicate updateId (dedup section 13.5)", () =>
+  it.effect("drops updates with a duplicate updateId (dedup)", () =>
     Effect.gen(function* () {
       const recorder = yield* makeRecorder
       yield* Dispatcher.run({

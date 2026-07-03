@@ -1,5 +1,5 @@
 /**
- * Bot API edge schemas - the **only** place `snake_case` is allowed (design section 5.3).
+ * Bot API edge schemas - the **only** place `snake_case` is allowed.
  *
  * The bulk of this module is **generated** from the Telegram Bot API spec: every
  * object schema (`./generated/types`) and every method's request-parameter schema

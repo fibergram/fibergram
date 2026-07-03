@@ -1,5 +1,5 @@
 /**
- * Pure string helpers straddling the `snake_case`/`camelCase` boundary (design §5.3)
+ * Pure string helpers straddling the `snake_case`/`camelCase` boundary
  * plus JSDoc block rendering. No IO, no Effect — just `string -> string`.
  */
 
@@ -17,7 +17,7 @@ export const oneLine = (desc: ReadonlyArray<string> | string | undefined): strin
   return joined.replace(/\s+/g, " ").replace(/\*\//g, "*​/").trim()
 }
 
-/** A `@category`/`@since`-tagged JSDoc block — docgen enforces both tags (design §14.2). */
+/** A `@category`/`@since`-tagged JSDoc block — docgen enforces both tags. */
 export const jsdoc = (description: string, category: string): string => {
   const desc = description.length === 0 ? "" : ` * ${description}\n *\n`
   return `/**\n${desc} * @category ${category}\n * @since 0.1.0\n */\n`

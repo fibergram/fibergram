@@ -1,8 +1,8 @@
 /**
- * `Decision` - the output of a dialog handler (design section 4.3). A decision is the
+ * `Decision` - the output of a dialog handler. A decision is the
  * event-sourced "truth layer": a set of `events` that fold into the next state,
  * plus a set of `effects` (send/edit/...) to run. Keeping the two apart is what
- * makes the primitive replayable and inspectable down the line (durable, section 13.2).
+ * makes the primitive replayable and inspectable down the line (durable).
  *
  * @since 0.1.0
  */

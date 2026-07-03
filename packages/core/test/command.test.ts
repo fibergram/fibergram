@@ -18,7 +18,7 @@ const coords = Command.make(
 )
 const ping = Command.make("/ping")
 
-describe("Command (§5.3)", () => {
+describe("Command", () => {
   it.effect("matches its command and decodes a single-field tail", () =>
     Effect.gen(function* () {
       const parsed = setAge.parse(msg("/setage 30"))

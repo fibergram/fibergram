@@ -1,5 +1,5 @@
 /**
- * `Dedup` - idempotency by `updateId` (design section 7, section 13.5). Long polling and
+ * `Dedup` - idempotency by `updateId`. Long polling and
  * webhook both retry on failure, so exactly-once processing is achieved by
  * dropping updates whose `updateId` has already been seen. This ships the
  * in-memory backend; a durable event log slots behind the same port later.

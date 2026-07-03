@@ -1,5 +1,5 @@
 /**
- * Webhook ingestion (design section 7.1). Like polling, the webhook transport is
+ * Webhook ingestion. Like polling, the webhook transport is
  * **just a producer into a shared `Queue<Update>`** - the dispatcher drains
  * `Stream.fromQueue` and never learns which transport delivered an update. The
  * decoupling point is `Queue.offer`: everything before it (secret-token check,
@@ -9,20 +9,20 @@
  * - {@link Webhook.handle} - **framework-agnostic**, takes a web-standard
  *   `Request` and returns a `Promise<Response>`. Serves serverless (Workers,
  *   Vercel, Lambda), Bun, workerd and any framework that speaks web `Request`
- *   directly; express/fastify need a ~20-line body/headers adapter (section 7.1).
+ *   directly; express/fastify need a ~20-line body/headers adapter.
  *   Nothing from Effect leaks across that boundary.
  * - {@link Webhook.httpApp} - **Effect-native**, an `Effect<HttpServerResponse,
  *   never, HttpServerRequest>` mounted on the `@effect/platform` HTTP server via
  *   `HttpRouter.add("POST", "/webhook", webhook.httpApp)`; tracing spans and `R`
  *   flow through untouched.
  *
- * **Ack policy** (section 7.2). Telegram retries a webhook it does not 2xx within
+ * **Ack policy**. Telegram retries a webhook it does not 2xx within
  * the timeout, so the handler never does heavy work inline:
  * - **fast-ack** (default): `offer` to the in-memory queue, return 200. A crash
  *   between the 200 and processing loses that update.
  * - **durable-ack** ({@link MakeOptions.persist}): persist the update, *then*
  *   offer, *then* 200; a failed persist answers 500 so Telegram re-delivers
- *   (at-least-once). Dedup by `updateId` (section 8) removes the duplicates.
+ *   (at-least-once). Dedup by `updateId` removes the duplicates.
  *
  * @since 0.1.0
  */
@@ -93,14 +93,14 @@ export interface MakeOptions {
    * any request whose `X-Telegram-Bot-Api-Secret-Token` header does not match
    * (constant-time) with `401`. Omit only if the endpoint is otherwise
    * unguessable - the token is the sole thing separating Telegram from spoofed
-   * traffic (section 7.2).
+   * traffic.
    */
   readonly secretToken?: string | Redacted.Redacted<string>
   /** Bounded queue capacity; a full queue makes the entrypoint block before its
    * 200, which is the intended signal to Telegram to retry later (default 1024). */
   readonly capacity?: number
   /**
-   * Durable-ack hook (section 7.2). When provided, a validated update is handed
+   * Durable-ack hook. When provided, a validated update is handed
    * to `persist` *before* it is enqueued and before `200` is returned; if
    * `persist` fails the entrypoint answers `500`, so Telegram re-delivers and
    * nothing is lost (at-least-once). Omit for fast-ack. Must be `R = never` -
@@ -232,7 +232,14 @@ export const make = (
 
         yield* Queue.offer(queue, update.value)
         return 200
-      })
+      }).pipe(
+        // Trace the ingestion leg. The dispatcher opens its own
+        // `fibergram.update` span once the update is dequeued; this one covers the
+        // synchronous validate/decode/enqueue before the 200. Spans flow to
+        // whatever Tracer is provided (a no-op when none is).
+        Effect.tap((status) => Effect.annotateCurrentSpan("http.status", status)),
+        Effect.withSpan("fibergram.webhook")
+      )
 
     const httpApp = Effect.gen(function* () {
       const request = yield* HttpServerRequest.HttpServerRequest

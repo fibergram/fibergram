@@ -172,6 +172,9 @@ importers:
 
   packages/durable:
     dependencies:
+      '@fibergram/client':
+        specifier: workspace:^
+        version: link:../client
       '@fibergram/core':
         specifier: workspace:^
         version: link:../core
@@ -188,6 +191,9 @@ importers:
       '@effect/vitest':
         specifier: 'catalog:'
         version: 4.0.0-beta.92(effect@4.0.0-beta.92)(vitest@3.2.6(@types/node@22.20.0)(tsx@4.22.4)(yaml@2.9.0))
+      '@fibergram/testing':
+        specifier: workspace:^
+        version: link:../testing
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

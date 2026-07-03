@@ -2,7 +2,7 @@
  * `DialogStore` - the persistence port for folded dialog state, keyed by
  * {@link module:DialogAddress.toKey}. This ships the in-memory backend; the
  * durable backend (event-sourced, passivating) lands behind the same port
- * later (design section 6, section 8).
+ * later.
  *
  * State is stored as `unknown`: the {@link module:EntityManager.EntityManager}
  * owns the `Dialog` and therefore the concrete `State` type. A typed, schema-

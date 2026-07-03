@@ -29,7 +29,7 @@ const userRepoLayer = Layer.succeed(UserRepo, {
 const greet = Command.make("/greet")
 const Vote = CallbackData.make("vote", Schema.Struct({ id: Schema.Number }))
 
-// --- One bot from N routes with *different* R (design §11.3). ----------------
+// --- One bot from N routes with *different* R. ----------------
 //  - command route requires UserRepo + TelegramClient
 //  - callback route requires TelegramClient
 //  - fallback route requires TelegramClient
@@ -48,7 +48,7 @@ const router = Router.make(
   )
 )
 
-// --- §11.3 proof, at the type level: R/E accumulate *exactly*, no `any`. -----
+// --- proof, at the type level: R/E accumulate *exactly*, no `any`. -----
 type CtxOf<T> = T extends Router.Router<infer _E, infer R> ? R : never
 type ErrOf<T> = T extends Router.Router<infer E, infer _R> ? E : never
 
@@ -73,7 +73,7 @@ type _errExact = Assert<Equals<ErrOf<typeof router>, ExpectedErr>>
 // Silence "unused type" without weakening the assertions.
 export type _Proof = [_ctxNotAny, _ctxExact, _errNotAny, _errExact]
 
-describe("Router (§11.1 handler-style + declarative sugar, §11.3 R accumulation)", () => {
+describe("Router (handler-style + declarative sugar, R accumulation)", () => {
   it.effect("routes command, callback and fallback from one router, one Layer at the edge", () =>
     Effect.gen(function* () {
       const tg = yield* TestTelegram.make

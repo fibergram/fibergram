@@ -1,5 +1,5 @@
 /**
- * `Dispatcher` - the seam between ingestion and dialogs (design section 7). It reads
+ * `Dispatcher` - the seam between ingestion and dialogs. It reads
  * the transport-agnostic `Stream<Update>` and feeds each update into an
  * {@link module:EntityManager.EntityManager}. Polling and webhook are both just
  * producers into the queue this stream drains, so the dispatcher never knows
@@ -46,7 +46,7 @@ export interface RunOptions<State, Event, E, R> {
  * been fully processed.
  *
  * Requires the dialog's `R`, a {@link DialogStore}, a {@link Dedup} and a
- * `Scope` owning the address fibers - provided once at the edge (design section 5.1).
+ * `Scope` owning the address fibers - provided once at the edge.
  *
  * @example
  * import { Dispatcher, Dialog, DialogStore, Dedup } from "@fibergram/core"

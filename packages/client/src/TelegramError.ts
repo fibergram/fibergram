@@ -1,5 +1,5 @@
 /**
- * Telegram error model - a tagged union, not an error base class (design section 5.2, D4).
+ * Telegram error model - a tagged union, not an error base class (D4).
  *
  * Domain errors of the user flow untouched through `E`; only Bot-API-semantic
  * failures are represented here. `RateLimited` carries a {@link Duration} so a
@@ -35,7 +35,7 @@ export class BotBlocked extends Data.TaggedError("BotBlocked")<{
 
 /**
  * Edit was a no-op - the *expected* error the dialog swallows when re-rendering
- * an unchanged prompt (design section 5.2, section 13.6).
+ * an unchanged prompt.
  *
  * @category errors
  * @since 0.1.0

@@ -1,6 +1,6 @@
 /**
  * `Coroutine` - the ergonomic DSL that elaborates into the `Dialog` decider
- * (design section 4.3, D2). A wizard reads top-to-bottom as a generator:
+ * (D2). A wizard reads top-to-bottom as a generator:
  *
  * ```ts
  * Coroutine.make("registration", function* (d) {
@@ -12,7 +12,7 @@
  *
  * Each `prompt` is an **atomic step boundary**: the coroutine sends its question,
  * suspends until the next update, and resumes with the decoded answer. The driver
- * is **replay-based** (the Temporal/Effect-Workflow model, section 13.2): on every
+ * is **replay-based** (the Temporal/Effect-Workflow model): on every
  * update it re-runs the generator from the top, feeding already-answered prompts
  * from persisted state and performing each side effect exactly once, **in program
  * order** (a `reply` before a `run` sends before the activity runs).
@@ -50,7 +50,7 @@ type LogEntry =
 /**
  * Raised as a **defect** when a replay diverges from the persisted log: the
  * generator yielded a different step than the one recorded at `position`, or it
- * finished before consuming every recorded step (design section 13.2). This is
+ * finished before consuming every recorded step. This is
  * the workflow-determinism footgun made loud - a non-deterministic branch (an
  * `if` on `Date.now()`, `Math.random()`, or an inline external read) takes a
  * different path on replay, and instead of silently feeding the wrong value into
@@ -73,7 +73,7 @@ export class NonDeterminismError extends Data.TaggedError("NonDeterminismError")
  * the pending prompt's question has already been asked, whether the coroutine has
  * returned, and - once it has - its `result` (the generator's `return` value).
  * `result` is what a parent reads when it composes a sub-coroutine and awaits its
- * outcome (design section 4.3).
+ * outcome.
  *
  * @category models
  * @since 0.1.0
@@ -170,7 +170,7 @@ const initialState: State<never> = { log: [], asked: false, done: false, result:
 /**
  * Elaborates a coroutine `program` into a {@link module:Dialog.Dialog}. The
  * result is an ordinary decider - interoperable with hand-written dialogs and
- * runnable on any backend (design section 4.3).
+ * runnable on any backend.
  *
  * @example
  * import { Coroutine } from "@fibergram/core"
@@ -208,7 +208,7 @@ export const make = <
   }
 
   // On replay, the op the generator yields must match the step recorded at
-  // `position`; a mismatch means the handler took a different path (§13.2).
+  // `position`; a mismatch means the handler took a different path.
   const expectTag = (
     entry: LogEntry | undefined,
     expected: LogEntry["_tag"],
@@ -310,7 +310,7 @@ export const make = <
 
       const done = step.done === true
       // The path shrank: the generator returned before consuming every recorded
-      // step, so a prior run took a longer path (§13.2).
+      // step, so a prior run took a longer path.
       if (done && cursor < boundary) {
         yield* Effect.die(
           new NonDeterminismError({

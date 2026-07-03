@@ -1,14 +1,16 @@
 /**
- * Retry that honours Telegram's `retry_after` (design section 5.2, D4). A blind
+ * Retry that honours Telegram's `retry_after` (D4). A blind
  * exponential backoff would ignore the exact wait Telegram hands back on a 429;
  * this waits precisely {@link RateLimited.retryAfter} and retries, up to a bound.
  *
  * Because the wait goes through `Effect.sleep`, tests drive it with `TestClock`
- * without real time passing (design section 5.6).
+ * without real time passing.
  *
  * @since 0.1.0
  */
-import { Effect } from "effect"
+import { Effect, Metric } from "effect"
+
+import { rateLimitHits } from "./Telemetry.js"
 
 import type { TelegramError } from "@fibergram/client"
 
@@ -38,8 +40,12 @@ export const retryRateLimited = <A, R>(
   const maxAttempts = options?.maxAttempts ?? 3
   const attempt = (n: number): Effect.Effect<A, TelegramError.TelegramError, R> =>
     Effect.catchTag(effect, "RateLimited", (error) =>
-      n >= maxAttempts
-        ? Effect.fail(error)
-        : Effect.andThen(Effect.sleep(error.retryAfter), attempt(n + 1)))
+      Metric.update(rateLimitHits, 1).pipe(
+        Effect.andThen(
+          n >= maxAttempts
+            ? Effect.fail(error)
+            : Effect.andThen(Effect.sleep(error.retryAfter), attempt(n + 1))
+        )
+      ))
   return attempt(1)
 }

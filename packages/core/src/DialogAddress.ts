@@ -1,7 +1,7 @@
 /**
  * Dialog addressing - a dialog is a virtual actor with a stable address
- * (design section 4.2). The address is the mailbox key: ordering is guaranteed *within*
- * an address, concurrency is allowed *between* addresses (section 8).
+ *. The address is the mailbox key: ordering is guaranteed *within*
+ * an address, concurrency is allowed *between* addresses.
  *
  * The `KeyExtractor` is pluggable because different bots want different address
  * shapes (per-chat, per-user, per-thread).
@@ -29,7 +29,7 @@ export interface DialogAddress {
 
 /**
  * Extracts the {@link DialogAddress} an update belongs to, or `None` to drop the
- * update. Pluggable per bot (design section 4.2).
+ * update. Pluggable per bot.
  *
  * @category models
  * @since 0.1.0

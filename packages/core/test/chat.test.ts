@@ -23,7 +23,7 @@ const runDialog = <S, Ev, E>(
     Effect.provide([DialogStore.layerMemory, Dedup.layerMemory, tg.layer])
   )
 
-describe("Chat accessors (§5.1, §11.2)", () => {
+describe("Chat accessors", () => {
   it.effect("reply targets the current chat resolved from the ambient env", () =>
     Effect.gen(function* () {
       const tg = yield* TestTelegram.make
@@ -87,7 +87,7 @@ describe("Chat accessors (§5.1, §11.2)", () => {
       expect(sent[0]?.messageThreadId).toBe(7)
     }))
 
-  it.effect("withTyping shows a typing indicator around the work (§5.5)", () =>
+  it.effect("withTyping shows a typing indicator around the work", () =>
     Effect.gen(function* () {
       const tg = yield* TestTelegram.make
       const dialog = Dialog.stateless({

@@ -1,6 +1,6 @@
 /**
- * `Command` - typed slash commands with `Schema`-decoded arguments (design
- * section 5.3). `Command.make("/setage", Schema.Struct({ age: NumberFromString }))`
+ * `Command` - typed slash commands with `Schema`-decoded arguments.
+ * `Command.make("/setage", Schema.Struct({ age: NumberFromString }))`
  * matches `/setage 30` (and `/setage@bot 30` in groups) and decodes `"30"` into
  * `{ age: 30 }` - the same Schema-on-every-edge discipline used for updates.
  *

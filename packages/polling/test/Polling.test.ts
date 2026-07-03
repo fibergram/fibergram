@@ -27,7 +27,7 @@ const stubClient = (
     }
   }) as unknown as TelegramClient.TelegramClientService
 
-describe("Polling ingestion (section 7 - offset management)", () => {
+describe("Polling ingestion (offset management)", () => {
   it.effect("advances the offset by (max updateId + 1) and streams updates in order", () =>
     Effect.gen(function* () {
       const requestedOffsets = yield* Ref.make<ReadonlyArray<number | undefined>>([])

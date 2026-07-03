@@ -1,8 +1,8 @@
 /**
  * `@fibergram/core` - the invariant model: dialog addressing, the decider
  * primitive, the in-memory `EntityManager`, dedup, retry honouring `retry_after`
- * and the dispatch loop (design section 4, section 5, section 8). This package stays publishable and
- * useful even while the durable backend absorbs beta churn (section 6).
+ * and the dispatch loop. This package stays publishable and
+ * useful even while the durable backend absorbs beta churn.
  *
  * @since 0.1.0
  */
@@ -62,6 +62,14 @@ export * as Dispatcher from "./Dispatcher.js"
  * @since 0.1.0
  */
 export * as Retry from "./Retry.js"
+
+/**
+ * Observability defaults (annotated logs, per-update spans, metrics) applied at
+ * the dispatch boundary.
+ *
+ * @since 0.1.0
+ */
+export * as Telemetry from "./Telemetry.js"
 
 /**
  * The per-update ambient context (`UpdateEnv` + reference) that dissolves `ctx`.

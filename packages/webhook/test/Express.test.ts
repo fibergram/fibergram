@@ -38,7 +38,7 @@ const post = (url: string, body: string, headers: Record<string, string>) =>
   Effect.promise(() =>
     fetch(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body }))
 
-describe("Express adapter (section 7.1)", () => {
+describe("Express adapter", () => {
   it.live("bridges a validly-signed update through express.json(): 200 + enqueued", () =>
     Effect.gen(function* () {
       const webhook = yield* Webhook.make({ secretToken: "s3cret" })

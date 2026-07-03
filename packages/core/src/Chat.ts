@@ -1,5 +1,5 @@
 /**
- * `Chat` - the ctx-less ergonomics layer (design section 5.1, section 11.2). Free
+ * `Chat` - the ctx-less ergonomics layer. Free
  * accessor functions that read the ambient {@link module:UpdateContext} the
  * dispatcher stamped for the current update, so a handler writes `Chat.reply("hi")`
  * instead of digging `chatId` out of a context object.
@@ -37,7 +37,7 @@ import type { TelegramError , BotApi} from "@fibergram/client"
 export const chatId: Effect.Effect<number> = Effect.map(UpdateContext.env, (env) => env.chatId)
 
 /**
- * The Forum Topic thread of the current update, if any (design section 4.1).
+ * The Forum Topic thread of the current update, if any.
  *
  * @example
  * import { Chat } from "@fibergram/core"
@@ -144,7 +144,7 @@ export interface EditOptions {
 
 /**
  * Edits the last message this handler sent in the current turn, instead of
- * spamming a new one (design section 13.6). Falls back to a fresh {@link reply}
+ * spamming a new one. Falls back to a fresh {@link reply}
  * when nothing has been sent yet.
  *
  * @example
@@ -232,8 +232,8 @@ export const answerCallback = (
 
 /**
  * Runs `effect` while a `"typing…"` indicator shows in the current chat, cleared
- * automatically when it finishes - a textbook `Scope`/`acquireRelease` (design
- * section 5.5). Telegram expires the indicator after ~5s, so it is refreshed every
+ * automatically when it finishes - a textbook `Scope`/`acquireRelease`.
+ * Telegram expires the indicator after ~5s, so it is refreshed every
  * 4s; errors from the refresh are ignored so they never fail the wrapped work.
  *
  * @example

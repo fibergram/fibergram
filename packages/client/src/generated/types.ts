@@ -1,7 +1,7 @@
 /**
  * Bot API object schemas, generated from the Telegram Bot API spec.
  *
- * This is the **only** place `snake_case` is allowed (design §5.3): each schema's
+ * This is the **only** place `snake_case` is allowed: each schema's
  * decoded `Type` is `camelCase`, its `Encoded` shape is the raw `snake_case` Telegram
  * speaks, wired via {@link Schema.encodeKeys}. Decoding is lenient — unknown fields drop.
  *

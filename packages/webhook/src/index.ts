@@ -1,7 +1,7 @@
 /**
  * `@fibergram/webhook` - webhook ingestion as a second producer into the shared
  * `Queue<Update>`. A framework-agnostic `handle(Request) => Promise<Response>`
- * with secret-token validation and fast-ack (design section 7.1).
+ * with secret-token validation and fast-ack.
  *
  * @since 0.1.0
  */

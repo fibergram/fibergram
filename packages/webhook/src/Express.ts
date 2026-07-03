@@ -1,5 +1,5 @@
 /**
- * Express adapter for {@link module:Webhook.Webhook} (design section 7.1). A thin
+ * Express adapter for {@link module:Webhook.Webhook}. A thin
  * bridge - it only rebuilds a web-standard `Request` from the express `req` and
  * writes the returned `Response`'s status back onto `res`; all validation and
  * decoding stay in `Webhook.handle`. `express` is an optional peer dependency and
