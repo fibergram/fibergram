@@ -32,6 +32,8 @@ export interface TestTelegram {
   readonly edited: Ref.Ref<ReadonlyArray<BotApi.EditMessageTextParams>>
   readonly actions: Ref.Ref<ReadonlyArray<BotApi.SendChatActionParams>>
   readonly answered: Ref.Ref<ReadonlyArray<BotApi.AnswerCallbackQueryParams>>
+  readonly reactions: Ref.Ref<ReadonlyArray<BotApi.SetMessageReactionParams>>
+  readonly inlineAnswers: Ref.Ref<ReadonlyArray<BotApi.AnswerInlineQueryParams>>
   readonly layer: Layer.Layer<TelegramClient.TelegramClient>
 }
 
@@ -40,6 +42,8 @@ export const make: Effect.Effect<TestTelegram> = Effect.gen(function* () {
   const edited = yield* Ref.make<ReadonlyArray<BotApi.EditMessageTextParams>>([])
   const actions = yield* Ref.make<ReadonlyArray<BotApi.SendChatActionParams>>([])
   const answered = yield* Ref.make<ReadonlyArray<BotApi.AnswerCallbackQueryParams>>([])
+  const reactions = yield* Ref.make<ReadonlyArray<BotApi.SetMessageReactionParams>>([])
+  const inlineAnswers = yield* Ref.make<ReadonlyArray<BotApi.AnswerInlineQueryParams>>([])
   const counter = yield* Ref.make(1000)
 
   const service = stubClient({
@@ -67,7 +71,11 @@ export const make: Effect.Effect<TestTelegram> = Effect.gen(function* () {
       }),
     answerCallbackQuery: (params) =>
       Ref.update(answered, (all) => [...all, params]).pipe(Effect.as(true)),
-    sendChatAction: (params) => Ref.update(actions, (all) => [...all, params]).pipe(Effect.as(true))
+    sendChatAction: (params) => Ref.update(actions, (all) => [...all, params]).pipe(Effect.as(true)),
+    setMessageReaction: (params) =>
+      Ref.update(reactions, (all) => [...all, params]).pipe(Effect.as(true)),
+    answerInlineQuery: (params) =>
+      Ref.update(inlineAnswers, (all) => [...all, params]).pipe(Effect.as(true))
   })
 
   return {
@@ -75,6 +83,8 @@ export const make: Effect.Effect<TestTelegram> = Effect.gen(function* () {
     edited,
     actions,
     answered,
+    reactions,
+    inlineAnswers,
     layer: Layer.succeed(TelegramClient.TelegramClient, service)
   }
 })
@@ -97,5 +107,55 @@ export const callbackUpdate = (
     chatInstance: `ci-${chatId}`,
     message: { messageId: updateId, date: 0, chat: { id: chatId, type: "private" } },
     data
+  }
+})
+
+export const reactionUpdate = (
+  updateId: number,
+  chatId: number,
+  fromId: number,
+  emoji: string
+): BotApi.Update => ({
+  updateId,
+  messageReaction: {
+    chat: { id: chatId, type: "private" },
+    messageId: updateId,
+    user: { id: fromId, isBot: false, firstName: "Tester" },
+    date: 0,
+    oldReaction: [],
+    newReaction: [{ type: "emoji", emoji }]
+  }
+})
+
+export const chatMemberJoinUpdate = (
+  updateId: number,
+  chatId: number,
+  fromId: number,
+  memberName: string
+): BotApi.Update => {
+  const user: BotApi.User = { id: fromId, isBot: false, firstName: memberName }
+  return {
+    updateId,
+    chatMember: {
+      chat: { id: chatId, type: "supergroup" },
+      from: user,
+      date: 0,
+      oldChatMember: { status: "left", user },
+      newChatMember: { status: "member", user }
+    }
+  }
+}
+
+export const inlineQueryUpdate = (
+  updateId: number,
+  fromId: number,
+  query: string
+): BotApi.Update => ({
+  updateId,
+  inlineQuery: {
+    id: `iq-${updateId}`,
+    from: { id: fromId, isBot: false, firstName: "Tester" },
+    query,
+    offset: ""
   }
 })

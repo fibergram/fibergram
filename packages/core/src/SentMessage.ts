@@ -4,10 +4,10 @@
  * `SentMessage` that carries the same data **plus** `Effect` methods to act on that
  * exact message (`edit`, `delete`, `pin`, `react`, `forwardTo`, `copyTo`).
  *
- * This is the fibergram answer to grammY's `hydrate` plugin, but without mutating
- * prototypes: it is an ordinary value whose methods close over the message's
- * `chat.id`/`message_id`. The methods require `TelegramClient` only when run, so
- * hydration itself is pure and adds nothing to a handler's `R`.
+ * It is an ordinary value whose methods close over the message's
+ * `chat.id`/`message_id`, never a mutated prototype. The methods require
+ * `TelegramClient` only when run, so hydration itself is pure and adds nothing to
+ * a handler's `R`.
  *
  * @since 0.1.0
  */

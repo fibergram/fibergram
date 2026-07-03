@@ -48,7 +48,7 @@ export interface EntityManager {
  */
 export interface MakeOptions<State, Event, E, R> {
   readonly dialog: Dialog<State, Event, E, R>
-  /** Address extractor; defaults to per-chat, namespaced by the dialog's `kind`. */
+  /** Address extractor; defaults to {@link module:DialogAddress.byUpdate}, namespaced by the dialog's `kind`. */
   readonly keyExtractor?: DialogAddress.KeyExtractor
   /** Per-address failure hook; defaults to logging the cause and carrying on. */
   readonly onDefect?: (
@@ -85,7 +85,7 @@ export const make = <State, Event, E, R>(
     const scope = yield* Effect.scope
     // Capture R once; every forked address fiber runs closed over these services.
     const services = yield* Effect.context<R>()
-    const extract = options.keyExtractor ?? DialogAddress.byChat(options.dialog.kind)
+    const extract = options.keyExtractor ?? DialogAddress.byUpdate(options.dialog.kind)
     const mailboxes = yield* Ref.make(HashMap.empty<string, Queue.Queue<BotApi.Update>>())
     // Quiescence tracking: `pending` counts accepted-but-unprocessed updates;
     // `idle` is open exactly when `pending === 0`.

@@ -30,7 +30,7 @@ export interface RunOptions<State, Event, E, R> {
   readonly updates: Stream.Stream<BotApi.Update>
   /** The dialog handling every routed update. */
   readonly dialog: Dialog<State, Event, E, R>
-  /** Address extractor; defaults to per-chat by the dialog's `kind`. */
+  /** Address extractor; defaults to {@link module:DialogAddress.byUpdate} by the dialog's `kind`. */
   readonly keyExtractor?: DialogAddress.KeyExtractor
   /** Per-address failure hook; defaults to logging and carrying on. */
   readonly onDefect?: (

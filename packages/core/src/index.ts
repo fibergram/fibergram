@@ -127,3 +127,31 @@ export * as Coroutine from "./Coroutine.js"
  * @since 0.1.0
  */
 export * as Router from "./Router.js"
+
+/**
+ * Pure read helpers over an incoming message (text, caption, entities).
+ *
+ * @since 0.1.0
+ */
+export * as Message from "./Message.js"
+
+/**
+ * Predicate filters over updates plus their `and`/`or`/`not` combinators.
+ *
+ * @since 0.1.0
+ */
+export * as Filter from "./Filter.js"
+
+/**
+ * Incoming payloads hydrated with `Effect` methods (`answer`/`approve`/...).
+ *
+ * @since 0.1.0
+ */
+export * as Hydrated from "./Hydrated.js"
+
+/**
+ * Constructors for `InlineQueryResult` values (`article`, `photo`, ...).
+ *
+ * @since 0.1.0
+ */
+export * as InlineResult from "./InlineResult.js"

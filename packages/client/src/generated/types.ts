@@ -2109,7 +2109,7 @@ export type TextQuote = Schema.Schema.Type<typeof TextQuote>
  * @since 0.1.0
  */
 export const SuggestedPostPrice = Schema.Struct({
-  currency: Schema.Literal("one"),
+  currency: Schema.String,
   amount: Schema.Number
 })
 
@@ -2911,7 +2911,7 @@ export interface RichBlockListItem {
   readonly hasCheckbox?: boolean
   readonly isChecked?: boolean
   readonly value?: number
-  readonly type?: "one"
+  readonly type?: string
 }
 
 /**
@@ -2926,7 +2926,7 @@ export const RichBlockListItem: Schema.Codec<RichBlockListItem, unknown> = Schem
   hasCheckbox: Schema.optionalKey(Schema.Boolean),
   isChecked: Schema.optionalKey(Schema.Boolean),
   value: Schema.optionalKey(Schema.Number),
-  type: Schema.optionalKey(Schema.Literal("one"))
+  type: Schema.optionalKey(Schema.String)
 }).pipe(
   Schema.encodeKeys({
     hasCheckbox: "has_checkbox",
@@ -3078,8 +3078,8 @@ export const RichBlockTableCell = Schema.Struct({
   isHeader: Schema.optionalKey(Schema.Boolean),
   colspan: Schema.optionalKey(Schema.Number),
   rowspan: Schema.optionalKey(Schema.Number),
-  align: Schema.Literal("one"),
-  valign: Schema.Literal("one")
+  align: Schema.String,
+  valign: Schema.String
 }).pipe(
   Schema.encodeKeys({
     isHeader: "is_header"
@@ -4752,9 +4752,9 @@ export type WebAppInfo = Schema.Schema.Type<typeof WebAppInfo>
  * @since 0.1.0
  */
 export const LoginUrl = Schema.Struct({
-  url: Schema.Literal("check"),
+  url: Schema.String,
   forwardText: Schema.optionalKey(Schema.String),
-  botUsername: Schema.optionalKey(Schema.Literal("the")),
+  botUsername: Schema.optionalKey(Schema.String),
   requestWriteAccess: Schema.optionalKey(Schema.Boolean)
 }).pipe(
   Schema.encodeKeys({
@@ -6278,7 +6278,7 @@ export const InlineQuery = Schema.Struct({
   from: User,
   query: Schema.String,
   offset: Schema.String,
-  chatType: Schema.optionalKey(Schema.Literal("known")),
+  chatType: Schema.optionalKey(Schema.String),
   location: Schema.optionalKey(Location)
 }).pipe(
   Schema.encodeKeys({
@@ -7017,7 +7017,7 @@ export const InlineQueryResultGif = Schema.Struct({
   gifHeight: Schema.optionalKey(Schema.Number),
   gifDuration: Schema.optionalKey(Schema.Number),
   thumbnailUrl: Schema.String,
-  thumbnailMimeType: Schema.optionalKey(Schema.Literal("one")),
+  thumbnailMimeType: Schema.optionalKey(Schema.String),
   title: Schema.optionalKey(Schema.String),
   caption: Schema.optionalKey(Schema.String),
   parseMode: Schema.optionalKey(Schema.String),
@@ -7105,7 +7105,7 @@ export const InlineQueryResultMpeg4Gif = Schema.Struct({
   mpeg4Height: Schema.optionalKey(Schema.Number),
   mpeg4Duration: Schema.optionalKey(Schema.Number),
   thumbnailUrl: Schema.String,
-  thumbnailMimeType: Schema.optionalKey(Schema.Literal("one")),
+  thumbnailMimeType: Schema.optionalKey(Schema.String),
   title: Schema.optionalKey(Schema.String),
   caption: Schema.optionalKey(Schema.String),
   parseMode: Schema.optionalKey(Schema.String),
@@ -7146,7 +7146,7 @@ export type InlineQueryResultMpeg4Gif = Schema.Schema.Type<typeof InlineQueryRes
 export const InlineQueryResultPhoto = Schema.Struct({
   type: Schema.Literal("photo"),
   id: Schema.String,
-  photoUrl: Schema.Literal("in"),
+  photoUrl: Schema.String,
   thumbnailUrl: Schema.String,
   photoWidth: Schema.optionalKey(Schema.Number),
   photoHeight: Schema.optionalKey(Schema.Number),
@@ -7927,7 +7927,7 @@ export type InputProfilePhoto = Schema.Schema.Type<typeof InputProfilePhoto>
  */
 export const InputSticker = Schema.Struct({
   sticker: Schema.Union([InputFile, Schema.String]),
-  format: Schema.Literal("one"),
+  format: Schema.String,
   emojiList: Schema.Array(Schema.String),
   maskPosition: Schema.optionalKey(MaskPosition),
   keywords: Schema.optionalKey(Schema.Array(Schema.String))
@@ -8940,7 +8940,7 @@ export const ReplyParameters = Schema.Struct({
   messageId: Schema.Number,
   chatId: Schema.optionalKey(Schema.Union([Schema.Number, Schema.String])),
   allowSendingWithoutReply: Schema.optionalKey(Schema.Boolean),
-  quote: Schema.optionalKey(Schema.Literal("an")),
+  quote: Schema.optionalKey(Schema.String),
   quoteParseMode: Schema.optionalKey(Schema.String),
   quoteEntities: Schema.optionalKey(Schema.Array(MessageEntity)),
   quotePosition: Schema.optionalKey(Schema.Number),

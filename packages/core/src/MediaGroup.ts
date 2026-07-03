@@ -1,7 +1,6 @@
 /**
- * `MediaGroup` - an immutable builder for an album (`sendMediaGroup`). It mirrors
- * aiogram's `MediaGroupBuilder` / grammY's media-group helper: chain `.photo` /
- * `.video` / `.document` / `.audio`, each accepting an uploaded
+ * `MediaGroup` - an immutable builder for an album (`sendMediaGroup`): chain
+ * `.photo` / `.video` / `.document` / `.audio`, each accepting an uploaded
  * {@link module:InputFile.InputFile} or a `file_id`/URL string, and the `attach://`
  * wiring is handled by the transport seam.
  *
