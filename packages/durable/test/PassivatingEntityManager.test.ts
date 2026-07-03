@@ -4,8 +4,8 @@ import { TestClock } from "effect/testing"
 import { describe, expect } from "vitest"
 
 import { Dedup, Dialog, DialogAddress, DialogStore } from "@fibergram/core"
+import { Updates } from "@fibergram/core/testing"
 import { PassivatingEntityManager, PersistedDialogStore } from "@fibergram/durable"
-import { Updates } from "@fibergram/testing"
 
 // A pure counter: no effects, no client. State lives entirely in the store, so
 // asserting on the store proves rehydration preserved it.

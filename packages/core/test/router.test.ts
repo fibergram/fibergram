@@ -2,6 +2,7 @@ import { it } from "@effect/vitest"
 import { Context, Effect, Layer, Option, Ref, Schema, Stream } from "effect"
 import { describe, expect } from "vitest"
 
+import * as TestTelegram from "./TestTelegram.js"
 import {
   CallbackData,
   Chat,
@@ -10,11 +11,10 @@ import {
   DialogStore,
   Dispatcher,
   Router
-} from "@fibergram/core"
+} from "../src/index.js"
 
-import * as TestTelegram from "./TestTelegram.js"
 
-import type { TelegramClient, TelegramError } from "@fibergram/client"
+import type { TelegramClient, TelegramError } from "../src/client/index.js"
 
 // --- A second, non-Telegram requirement, to prove heterogeneous R accumulates.
 class UserRepo extends Context.Service<UserRepo, {

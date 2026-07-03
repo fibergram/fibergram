@@ -33,11 +33,9 @@
   },
   "dependencies": {
     "effect": "catalog:",
-    "@fibergram/core": "workspace:^",
-    "@fibergram/client": "workspace:^"
+    "@fibergram/core": "workspace:^"
   },
   "devDependencies": {
-    "@fibergram/testing": "workspace:^",
     "@arethetypeswrong/cli": "catalog:",
     "@effect/docgen": "catalog:",
     "@effect/vitest": "catalog:",

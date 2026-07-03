@@ -38,8 +38,8 @@ import { Data, Effect, Option, Schema } from "effect"
 import * as Chat from "./Chat.js"
 import * as Decision from "./Decision.js"
 
+import type { BotApi, TelegramClient, TelegramError } from "./client/index.js"
 import type { Dialog } from "./Dialog.js"
-import type { BotApi, TelegramClient, TelegramError } from "@fibergram/client"
 
 /** A step recorded in the coroutine's persisted log. */
 type LogEntry =

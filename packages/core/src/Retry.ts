@@ -12,7 +12,7 @@ import { Effect, Metric } from "effect"
 
 import { rateLimitHits } from "./Telemetry.js"
 
-import type { TelegramError } from "@fibergram/client"
+import type { TelegramError } from "./client/index.js"
 
 /**
  * Retries `effect` on {@link TelegramError.RateLimited}, sleeping for the
@@ -22,7 +22,7 @@ import type { TelegramError } from "@fibergram/client"
  *
  * @example
  * import { Retry } from "@fibergram/core"
- * import { TelegramClient } from "@fibergram/client"
+ * import { TelegramClient } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const send = Effect.gen(function* () {

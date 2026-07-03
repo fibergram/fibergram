@@ -2,12 +2,12 @@ import { it } from "@effect/vitest"
 import { Effect, Layer, Ref, Stream } from "effect"
 import { describe, expect } from "vitest"
 
-import { TelegramClient } from "@fibergram/client"
-import { Dedup, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
-
 import { stubClient } from "./TestTelegram.js"
+import { TelegramClient } from "../src/client/index.js"
+import { Dedup, Dialog, DialogStore, Dispatcher } from "../src/index.js"
 
-import type { BotApi, TelegramError } from "@fibergram/client";
+
+import type { BotApi, TelegramError } from "../src/client/index.js";
 
 // --- Test doubles -----------------------------------------------------------
 

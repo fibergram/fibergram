@@ -8,10 +8,5 @@
   "include": [
     "src",
     "test"
-  ],
-  "references": [
-    {
-      "path": "../client"
-    }
   ]
 }

@@ -20,8 +20,8 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/.turbo/**",
       "**/*.tsbuildinfo",
-      // Generated Bot API surface — machine output, not hand-maintained (§5.3).
-      "packages/client/src/generated/**",
+      // Generated Bot API surface — machine output, not hand-maintained
+      "packages/core/src/client/generated/**",
       // Node scripts / test config not part of any package's TS project.
       "**/codegen/**",
       "**/vitest.config.ts",

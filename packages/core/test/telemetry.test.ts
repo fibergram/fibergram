@@ -3,12 +3,12 @@ import { Duration, Effect, Fiber, Layer, Metric, References, Stream } from "effe
 import { TestClock } from "effect/testing"
 import { describe, expect } from "vitest"
 
-import { TelegramClient, TelegramError } from "@fibergram/client"
-import { Dedup, Dialog, DialogStore, Dispatcher, Retry, Telemetry } from "@fibergram/core"
-
 import { stubClient } from "./TestTelegram.js"
+import { TelegramClient, TelegramError } from "../src/client/index.js"
+import { Dedup, Dialog, DialogStore, Dispatcher, Retry, Telemetry } from "../src/index.js"
 
-import type { BotApi } from "@fibergram/client"
+
+import type { BotApi } from "../src/client/index.js"
 
 // Metrics live in a process-global registry, so tests assert on the *delta*
 // around a run rather than absolute values.

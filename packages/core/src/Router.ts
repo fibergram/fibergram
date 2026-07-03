@@ -30,8 +30,8 @@ import * as Hydrated from "./Hydrated.js"
 import * as Message from "./Message.js"
 
 import type * as CallbackData from "./CallbackData.js"
+import type { BotApi, TelegramClient } from "./client/index.js"
 import type * as Command from "./Command.js"
-import type { BotApi, TelegramClient } from "@fibergram/client"
 
 /**
  * The addressable update kinds a route can match: every payload-bearing key of
@@ -559,7 +559,7 @@ export function inlineQuery<E, R>(
     query: Hydrated.InlineQuery
   ) => Effect.Effect<void, E, R>
   const gate = (text: string): boolean =>
-    pattern === undefined ? true : typeof pattern === "string" ? text === pattern : pattern.test(text)
+    pattern === undefined ? true : (typeof pattern === "string" ? text === pattern : pattern.test(text))
   return routeOf((update) => {
     if (update.inlineQuery === undefined || !gate(update.inlineQuery.query)) return Option.none()
     return Option.some(run(Hydrated.inlineQuery(update.inlineQuery)))

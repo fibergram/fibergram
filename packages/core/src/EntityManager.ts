@@ -18,8 +18,8 @@ import { DialogStore } from "./DialogStore.js"
 import * as Telemetry from "./Telemetry.js"
 import * as UpdateContext from "./UpdateContext.js"
 
+import type { BotApi } from "./client/index.js"
 import type { Dialog } from "./Dialog.js"
-import type { BotApi } from "@fibergram/client"
 import type { Cause , Scope } from "effect"
 
 /**

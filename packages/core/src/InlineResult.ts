@@ -6,7 +6,7 @@
  *
  * @since 0.1.0
  */
-import type { BotApi } from "@fibergram/client"
+import type { BotApi } from "./client/index.js"
 
 const textContent = (message: string): BotApi.InputTextMessageContent => ({ messageText: message })
 

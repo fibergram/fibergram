@@ -2,7 +2,7 @@ import { it } from "@effect/vitest"
 import { Effect, Option, Schema } from "effect"
 import { describe, expect } from "vitest"
 
-import { CallbackData } from "@fibergram/core"
+import { CallbackData } from "../src/index.js"
 
 const Vote = CallbackData.make("vote", Schema.Struct({ id: Schema.Number, up: Schema.Boolean }))
 

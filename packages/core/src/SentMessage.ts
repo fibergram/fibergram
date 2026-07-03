@@ -13,9 +13,9 @@
  */
 import { Effect } from "effect"
 
-import { TelegramClient } from "@fibergram/client"
+import { TelegramClient } from "./client/index.js"
 
-import type { BotApi, TelegramError } from "@fibergram/client"
+import type { BotApi, TelegramError } from "./client/index.js"
 
 /**
  * Options for {@link SentMessage.edit}.

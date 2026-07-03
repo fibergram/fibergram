@@ -3,8 +3,8 @@ import { Duration, Effect, Fiber, Ref } from "effect"
 import { TestClock } from "effect/testing"
 import { describe, expect } from "vitest"
 
-import { TelegramError } from "@fibergram/client"
-import { Retry } from "@fibergram/core"
+import { TelegramError } from "../src/client/index.js"
+import { Retry } from "../src/index.js"
 
 describe("retryRateLimited (honour retry_after)", () => {
   it.effect("waits exactly retry_after, retries, then succeeds", () =>

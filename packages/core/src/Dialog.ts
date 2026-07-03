@@ -14,7 +14,7 @@ import { Effect } from "effect"
 
 import * as Decision from "./Decision.js"
 
-import type { BotApi } from "@fibergram/client"
+import type { BotApi } from "./client/index.js"
 
 /**
  * A dialog handler: decide what happens for `update` given the current `state`.
@@ -72,7 +72,7 @@ export const make = <State, Event, E, R>(
  *
  * @example
  * import { Dialog } from "@fibergram/core"
- * import { TelegramClient } from "@fibergram/client"
+ * import { TelegramClient } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const echo = Dialog.stateless({

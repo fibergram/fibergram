@@ -14,13 +14,12 @@
  */
 import { Duration, Effect, Fiber, Option, Ref } from "effect"
 
-import { TelegramClient } from "@fibergram/client"
-
+import { TelegramClient } from "./client/index.js"
 import * as SentMessage from "./SentMessage.js"
 import * as UpdateContext from "./UpdateContext.js"
 
+import type { BotApi, InputFile, TelegramError } from "./client/index.js"
 import type * as MediaGroup from "./MediaGroup.js"
-import type { BotApi, InputFile, TelegramError } from "@fibergram/client"
 
 /**
  * Any of the four reply-markup kinds a message can carry: an inline keyboard, a
@@ -43,6 +42,34 @@ export type ReplyMarkup =
  * @since 0.1.0
  */
 export type Media = InputFile.InputFile | string
+
+/**
+ * Pre-formatted text: the rendered string and its `entities`, with no
+ * `parse_mode`. This is structurally the output of an entity-tree formatter (e.g.
+ * `@fibergram/core/ui`'s `Fmt`), so a formatter result feeds {@link reply} /
+ * {@link editLast} / a media caption directly - no import of the UI package and
+ * nothing to escape.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface FormattedText {
+  /** The rendered text. */
+  readonly text: string
+  /** The entities marking spans of {@link text} (mutually exclusive with a parse mode). */
+  readonly entities?: ReadonlyArray<BotApi.MessageEntity>
+}
+
+/**
+ * Text to send: a plain `string` (optionally with a parse mode via options) or
+ * pre-formatted {@link FormattedText} carrying its own entities.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export type Text = string | FormattedText
+
+const asFormatted = (text: Text): FormattedText => (typeof text === "string" ? { text } : text)
 
 // --- ambient accessors -------------------------------------------------------
 
@@ -130,11 +157,17 @@ const replyToField = (
 
 const captionFields = (
   options?: MediaOptions
-): { caption?: string; parseMode?: string; captionEntities?: ReadonlyArray<BotApi.MessageEntity> } => ({
-  ...(options?.caption !== undefined ? { caption: options.caption } : {}),
-  ...(options?.parseMode !== undefined ? { parseMode: options.parseMode } : {}),
-  ...(options?.captionEntities !== undefined ? { captionEntities: options.captionEntities } : {})
-})
+): { caption?: string; parseMode?: string; captionEntities?: ReadonlyArray<BotApi.MessageEntity> } => {
+  if (options?.caption === undefined) return {}
+  const body = asFormatted(options.caption)
+  const entities = body.entities ?? options.captionEntities
+  return {
+    caption: body.text,
+    ...(entities !== undefined ? { captionEntities: entities } : {}),
+    // A parse mode only applies to a plain caption with no explicit entities.
+    ...(entities === undefined && options.parseMode !== undefined ? { parseMode: options.parseMode } : {})
+  }
+}
 
 /** Record the sent message id (so `editLast` can target it) and hydrate it. */
 const remember = (env: Env, message: BotApi.Message): Effect.Effect<SentMessage.SentMessage> =>
@@ -170,9 +203,9 @@ export interface SendOptions {
  * @since 0.1.0
  */
 export interface MediaOptions extends SendOptions {
-  /** Caption text shown with the media. */
-  readonly caption?: string
-  /** Parse mode for the caption (`"MarkdownV2"`, `"HTML"`, ...). */
+  /** Caption shown with the media: plain text, or pre-formatted {@link FormattedText}. */
+  readonly caption?: Text
+  /** Parse mode for a plain-text caption (`"MarkdownV2"`, `"HTML"`, ...). */
   readonly parseMode?: string
   /** Pre-parsed caption entities (mutually exclusive with `parseMode`). */
   readonly captionEntities?: ReadonlyArray<BotApi.MessageEntity>
@@ -213,20 +246,23 @@ export interface ReplyOptions extends SendOptions {
  * @since 0.1.0
  */
 export const reply = (
-  text: string,
+  text: Text,
   options?: ReplyOptions
 ): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
   Effect.gen(function* () {
     const env = yield* UpdateContext.env
     const tg = yield* TelegramClient.TelegramClient
+    const body = asFormatted(text)
+    const entities = body.entities ?? options?.entities
     const message = yield* tg.sendMessage({
       chatId: env.chatId,
-      text,
+      text: body.text,
       ...threadField(env),
       ...markupField(options),
       ...replyToField(options),
-      ...(options?.parseMode !== undefined ? { parseMode: options.parseMode } : {}),
-      ...(options?.entities !== undefined ? { entities: options.entities } : {}),
+      ...(entities !== undefined ? { entities } : {}),
+      // A parse mode only applies to plain text with no explicit entities.
+      ...(entities === undefined && options?.parseMode !== undefined ? { parseMode: options.parseMode } : {}),
       ...(options?.linkPreviewOptions !== undefined ? { linkPreviewOptions: options.linkPreviewOptions } : {})
     })
     return yield* remember(env, message)
@@ -263,7 +299,7 @@ export interface EditOptions {
  * @since 0.1.0
  */
 export const editLast = (
-  text: string,
+  text: Text,
   options?: EditOptions
 ): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
   Effect.gen(function* () {
@@ -273,15 +309,17 @@ export const editLast = (
       return yield* reply(text, options)
     }
     const tg = yield* TelegramClient.TelegramClient
+    const body = asFormatted(text)
     // `editMessageText` returns `Message | true` per the Bot API - `true` only for
     // inline messages. `editLast` always targets a chat message (chatId + messageId),
     // so the result is always the edited `Message`.
     const edited = yield* tg.editMessageText({
       chatId: env.chatId,
       messageId: last.value,
-      text,
+      text: body.text,
       ...(options?.replyMarkup !== undefined ? { replyMarkup: options.replyMarkup } : {}),
-      ...(options?.parseMode !== undefined ? { parseMode: options.parseMode } : {})
+      ...(body.entities !== undefined ? { entities: body.entities } : {}),
+      ...(body.entities === undefined && options?.parseMode !== undefined ? { parseMode: options.parseMode } : {})
     })
     return SentMessage.make(edited as BotApi.Message)
   })
@@ -312,7 +350,7 @@ const sendFile = (
  *
  * @example
  * import { Chat } from "@fibergram/core"
- * import { InputFile } from "@fibergram/client"
+ * import { InputFile } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const handler = Effect.gen(function* () {
@@ -333,7 +371,7 @@ export const replyPhoto = (
  *
  * @example
  * import { Chat } from "@fibergram/core"
- * import { InputFile } from "@fibergram/client"
+ * import { InputFile } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const handler = Effect.gen(function* () {
@@ -354,7 +392,7 @@ export const replyDocument = (
  *
  * @example
  * import { Chat } from "@fibergram/core"
- * import { InputFile } from "@fibergram/client"
+ * import { InputFile } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const handler = Effect.gen(function* () {
@@ -375,7 +413,7 @@ export const replyVideo = (
  *
  * @example
  * import { Chat } from "@fibergram/core"
- * import { InputFile } from "@fibergram/client"
+ * import { InputFile } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const handler = Effect.gen(function* () {
@@ -396,7 +434,7 @@ export const replyAudio = (
  *
  * @example
  * import { Chat } from "@fibergram/core"
- * import { InputFile } from "@fibergram/client"
+ * import { InputFile } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const handler = Effect.gen(function* () {
@@ -417,7 +455,7 @@ export const replyVoice = (
  *
  * @example
  * import { Chat } from "@fibergram/core"
- * import { InputFile } from "@fibergram/client"
+ * import { InputFile } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const handler = Effect.gen(function* () {
@@ -471,7 +509,7 @@ export const replySticker = (
  *
  * @example
  * import { Chat, MediaGroup } from "@fibergram/core"
- * import { InputFile } from "@fibergram/client"
+ * import { InputFile } from "@fibergram/core/client"
  * import { Effect } from "effect"
  *
  * const handler = Effect.gen(function* () {

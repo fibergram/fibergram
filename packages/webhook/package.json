@@ -43,7 +43,6 @@
   },
   "dependencies": {
     "effect": "catalog:",
-    "@fibergram/client": "workspace:^",
     "@fibergram/core": "workspace:^"
   },
   "peerDependencies": {

@@ -21,9 +21,9 @@
     "docgen": "turbo run docgen",
     "check:exports": "turbo run check:exports",
     "circular": "madge --circular --extensions ts packages/*/src",
-    "codegen:fetch": "curl -fsSL https://raw.githubusercontent.com/PaulSonOfLars/telegram-bot-api-spec/main/api.json -o packages/client/codegen/api.json",
-    "codegen": "node --experimental-strip-types packages/client/codegen/generate.ts && pnpm --filter @fibergram/client build",
-    "codegen:check": "node --experimental-strip-types packages/client/codegen/generate.ts --check",
+    "codegen:fetch": "curl -fsSL https://raw.githubusercontent.com/PaulSonOfLars/telegram-bot-api-spec/main/api.json -o packages/core/codegen/api.json",
+    "codegen": "node --experimental-strip-types packages/core/codegen/generate.ts && pnpm --filter @fibergram/core build",
+    "codegen:check": "node --experimental-strip-types packages/core/codegen/generate.ts --check",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"

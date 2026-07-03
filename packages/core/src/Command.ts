@@ -13,7 +13,7 @@
  */
 import { Data, Effect, Option, Schema } from "effect"
 
-import type { BotApi } from "@fibergram/client"
+import type { BotApi } from "./client/index.js"
 
 /**
  * Raised when a command's arguments don't decode against its schema (missing,

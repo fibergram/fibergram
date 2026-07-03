@@ -1,8 +1,8 @@
 import { Effect, Layer, Ref } from "effect"
 
-import { TelegramClient } from "@fibergram/client"
+import { TelegramClient } from "../src/client/index.js"
 
-import type { BotApi} from "@fibergram/client";
+import type { BotApi} from "../src/client/index.js";
 
 
 // The Bot API now has 180 methods; tests only care about a handful. `stubClient`

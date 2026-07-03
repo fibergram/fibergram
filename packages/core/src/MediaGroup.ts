@@ -10,7 +10,7 @@
  *
  * @since 0.1.0
  */
-import type { BotApi, InputFile } from "@fibergram/client"
+import type { BotApi, InputFile } from "./client/index.js"
 
 /**
  * One album item: a photo, video, audio, or document input-media object.
@@ -106,7 +106,7 @@ const build = (items: ReadonlyArray<Item>): MediaGroup => ({
  *
  * @example
  * import { MediaGroup } from "@fibergram/core"
- * import { InputFile } from "@fibergram/client"
+ * import { InputFile } from "@fibergram/core/client"
  *
  * const album = MediaGroup.empty
  *   .photo(InputFile.fromPath("./1.png"), { caption: "First" })

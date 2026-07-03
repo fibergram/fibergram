@@ -2,11 +2,11 @@ import { it } from "@effect/vitest"
 import { Effect, Option, Ref, Stream } from "effect"
 import { describe, expect } from "vitest"
 
-import { Chat, Dedup, DialogAddress, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
-
 import * as TestTelegram from "./TestTelegram.js"
+import { Chat, Dedup, DialogAddress, Dialog, DialogStore, Dispatcher } from "../src/index.js"
 
-import type { BotApi, TelegramClient } from "@fibergram/client"
+
+import type { BotApi, TelegramClient } from "../src/client/index.js"
 
 const runDialog = <S, Ev, E>(
   tg: TestTelegram.TestTelegram,
@@ -57,6 +57,27 @@ describe("Chat accessors", () => {
       expect(edited.map((e) => e.text)).toEqual(["Done"])
       // editLast targeted the id the recorder assigned to the sent message.
       expect(edited[0]?.messageId).toBe(1001)
+    }))
+
+  it.effect("reply accepts pre-formatted text: sends entities, omits parseMode", () =>
+    Effect.gen(function* () {
+      const tg = yield* TestTelegram.make
+      const dialog = Dialog.stateless({
+        onUpdate: () =>
+          // Structurally the output of an entity-tree formatter (Chat.FormattedText).
+          Effect.asVoid(Chat.reply(
+            { text: "bold", entities: [{ type: "bold", offset: 0, length: 4 }] },
+            // A parseMode here must be ignored when explicit entities are present.
+            { parseMode: "HTML" }
+          ))
+      })
+      yield* runDialog(tg, dialog, [TestTelegram.textUpdate(1, 777, "go")])
+
+      const sent = yield* Ref.get(tg.sent)
+      expect(sent).toEqual([
+        { chatId: 777, text: "bold", entities: [{ type: "bold", offset: 0, length: 4 }] }
+      ])
+      expect(sent[0]).not.toHaveProperty("parseMode")
     }))
 
   it.effect("thread reflects the update's Forum Topic", () =>

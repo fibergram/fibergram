@@ -8,7 +8,7 @@
  */
 import { Option } from "effect"
 
-import type { BotApi } from "@fibergram/client"
+import type { BotApi } from "./client/index.js"
 
 /**
  * The message an update carries for text matching: a new or edited message or

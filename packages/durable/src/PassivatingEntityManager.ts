@@ -31,8 +31,8 @@ import { Duration, Effect, HashMap, Latch, Option, Queue, Ref, Semaphore, Stream
 import { Dedup, DialogAddress, DialogStore, UpdateContext } from "@fibergram/core"
 
 
-import type { BotApi } from "@fibergram/client"
 import type { Dialog} from "@fibergram/core";
+import type { BotApi } from "@fibergram/core/client"
 import type { Cause, Scope } from "effect"
 
 /**

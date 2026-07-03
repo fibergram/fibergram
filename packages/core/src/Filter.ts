@@ -11,7 +11,7 @@ import { Option } from "effect"
 import * as DialogAddress from "./DialogAddress.js"
 import * as Message from "./Message.js"
 
-import type { BotApi } from "@fibergram/client"
+import type { BotApi } from "./client/index.js"
 
 /**
  * A predicate over an update - the shape {@link module:Router.when} consumes.

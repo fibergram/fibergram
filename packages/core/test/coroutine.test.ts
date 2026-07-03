@@ -3,12 +3,12 @@ import { it } from "@effect/vitest"
 import { Effect, Option, Ref, Schema, Stream } from "effect"
 import { describe, expect } from "vitest"
 
-import { Coroutine, Dedup, DialogStore, Dispatcher, UpdateContext } from "@fibergram/core"
-
 import * as TestTelegram from "./TestTelegram.js"
+import { Coroutine, Dedup, DialogStore, Dispatcher, UpdateContext } from "../src/index.js"
 
-import type { BotApi, TelegramClient, TelegramError } from "@fibergram/client"
-import type { Dialog} from "@fibergram/core";
+
+import type { BotApi, TelegramClient, TelegramError } from "../src/client/index.js"
+import type { Dialog} from "../src/index.js";
 
 // The registration wizard, written as a coroutine.
 const Age = Schema.NumberFromString.check(Schema.isBetween({ minimum: 0, maximum: 150 }))

@@ -14,8 +14,8 @@
  */
 import { Context, Effect, Option, Ref } from "effect"
 
+import type { BotApi } from "./client/index.js"
 import type * as DialogAddress from "./DialogAddress.js"
-import type { BotApi } from "@fibergram/client"
 
 /**
  * The ambient facts about the update currently being handled: where it came from

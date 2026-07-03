@@ -15,7 +15,7 @@
  */
 import { Context, Data, Effect, Layer, Option, Ref, Schema } from "effect"
 
-import type { BotApi } from "@fibergram/client"
+import type { BotApi } from "./client/index.js"
 
 /** The Bot API hard limit on a `callback_data` string, in bytes. */
 const MAX_BYTES = 64

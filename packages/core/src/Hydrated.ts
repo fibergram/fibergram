@@ -15,11 +15,10 @@
  */
 import { Effect, Option } from "effect"
 
-import { TelegramClient } from "@fibergram/client"
-
+import { TelegramClient } from "./client/index.js"
 import * as SentMessage from "./SentMessage.js"
 
-import type { BotApi, TelegramError } from "@fibergram/client"
+import type { BotApi, TelegramError } from "./client/index.js"
 
 type Result<A> = Effect.Effect<A, TelegramError.TelegramError, TelegramClient.TelegramClient>
 
@@ -325,9 +324,9 @@ const emojiOf = (reaction: BotApi.ReactionType): Option.Option<string> =>
 const keyOf = (reaction: BotApi.ReactionType): string =>
   reaction.type === "emoji"
     ? `emoji:${reaction.emoji}`
-    : reaction.type === "custom_emoji"
+    : (reaction.type === "custom_emoji"
       ? `custom:${reaction.customEmojiId}`
-      : "paid"
+      : "paid")
 
 /**
  * A {@link module:BotApi.MessageReactionUpdated} with the computed diff: the

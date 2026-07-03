@@ -3,8 +3,8 @@ import { Effect, Option, Schema } from "effect"
 import { describe, expect } from "vitest"
 
 import { Coroutine, Dedup, DialogStore } from "@fibergram/core"
+import { TestTelegram, Updates } from "@fibergram/core/testing"
 import { PassivatingEntityManager, PersistedDialogStore } from "@fibergram/durable"
-import { TestTelegram, Updates } from "@fibergram/testing"
 
 // A two-question wizard: the canonical long-lived dialog whose progress must
 // outlive a restart.

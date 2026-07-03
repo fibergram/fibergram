@@ -10,7 +10,7 @@
  */
 import { Option } from "effect"
 
-import type { BotApi } from "@fibergram/client"
+import type { BotApi } from "./client/index.js"
 
 /**
  * The stable identity of a dialog. `kind` distinguishes co-located dialog types

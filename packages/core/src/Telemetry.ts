@@ -28,8 +28,8 @@
  */
 import { Clock, Duration, Effect, Metric } from "effect"
 
+import type { BotApi } from "./client/index.js"
 import type * as DialogAddress from "./DialogAddress.js"
-import type { BotApi } from "@fibergram/client"
 
 /**
  * The name of the span opened per update by {@link instrument}. Exposed so users

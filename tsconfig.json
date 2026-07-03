@@ -4,11 +4,8 @@
   // `tsc -b` builds the graph in the right order.
   "files": [],
   "references": [
-    { "path": "packages/client" },
     { "path": "packages/core" },
-    { "path": "packages/polling" },
     { "path": "packages/webhook" },
-    { "path": "packages/durable" },
-    { "path": "packages/testing" }
+    { "path": "packages/durable" }
   ]
 }

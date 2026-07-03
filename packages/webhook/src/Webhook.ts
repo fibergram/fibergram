@@ -33,7 +33,7 @@ import {
   HttpServerResponse
 } from "effect/unstable/http"
 
-import { BotApi } from "@fibergram/client"
+import { BotApi } from "@fibergram/core/client"
 
 import type { Scope, Stream } from "effect"
 import type {
@@ -154,7 +154,7 @@ export interface Webhook {
  * @example
  * import { Webhook } from "@fibergram/webhook"
  * import { Dispatcher, Dialog, DialogStore, Dedup } from "@fibergram/core"
- * import { TelegramClient } from "@fibergram/client"
+ * import { TelegramClient } from "@fibergram/core/client"
  * import { Effect, Layer } from "effect"
  * import { FetchHttpClient } from "effect/unstable/http"
  *

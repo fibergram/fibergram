@@ -2,11 +2,11 @@ import { it } from "@effect/vitest"
 import { Effect, Ref, Stream } from "effect"
 import { describe, expect } from "vitest"
 
-import { Chat, Command, Dedup, DialogStore, Dispatcher, Filter, InlineResult, Router } from "@fibergram/core"
-
 import * as TestTelegram from "./TestTelegram.js"
+import { Chat, Command, Dedup, DialogStore, Dispatcher, Filter, InlineResult, Router } from "../src/index.js"
 
-import type { BotApi } from "@fibergram/client"
+
+import type { BotApi } from "../src/client/index.js"
 
 // --- One bot exercising every kind of typed matcher: command + text + reaction +
 //     chat-member transition + inline query, with zero manual `Update` parsing.
