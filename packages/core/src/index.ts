@@ -43,6 +43,14 @@ export * as DialogStore from "./DialogStore.js"
 export * as Dedup from "./Dedup.js"
 
 /**
+ * A typed per-chat/per-user key-value slot over `DialogStore` - "just
+ * `ctx.session`" without the `Dialog` primitive.
+ *
+ * @since 0.1.0
+ */
+export * as Session from "./Session.js"
+
+/**
  * The `EntityManager` virtual-actor runtime.
  *
  * @since 0.1.0
