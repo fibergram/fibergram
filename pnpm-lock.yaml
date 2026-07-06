@@ -120,6 +120,31 @@ importers:
         specifier: 'catalog:'
         version: 8.62.1(eslint@9.39.4)(typescript@5.9.3)
 
+  packages/chat-members:
+    dependencies:
+      '@fibergram/core':
+        specifier: workspace:^
+        version: link:../core
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.92
+    devDependencies:
+      '@arethetypeswrong/cli':
+        specifier: 'catalog:'
+        version: 0.18.4
+      '@effect/docgen':
+        specifier: 'catalog:'
+        version: 0.5.2(tsx@4.22.4)(typescript@5.9.3)
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.92(effect@4.0.0-beta.92)(vitest@3.2.6(@types/node@22.20.0)(tsx@4.22.4)(yaml@2.9.0))
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.6(@types/node@22.20.0)(tsx@4.22.4)(yaml@2.9.0)
+
   packages/core:
     dependencies:
       effect:
