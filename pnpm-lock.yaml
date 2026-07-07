@@ -24,6 +24,9 @@ catalogs:
     '@eslint/js':
       specifier: ^9.37.0
       version: 9.39.4
+    '@fluent/bundle':
+      specifier: ^0.19.1
+      version: 0.19.1
     '@types/express':
       specifier: ^5.0.1
       version: 5.0.6
@@ -175,6 +178,34 @@ importers:
       '@fibergram/core':
         specifier: workspace:^
         version: link:../core
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.92
+    devDependencies:
+      '@arethetypeswrong/cli':
+        specifier: 'catalog:'
+        version: 0.18.4
+      '@effect/docgen':
+        specifier: 'catalog:'
+        version: 0.5.2(tsx@4.22.4)(typescript@5.9.3)
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.92(effect@4.0.0-beta.92)(vitest@3.2.6(@types/node@22.20.0)(tsx@4.22.4)(yaml@2.9.0))
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.6(@types/node@22.20.0)(tsx@4.22.4)(yaml@2.9.0)
+
+  packages/i18n:
+    dependencies:
+      '@fibergram/core':
+        specifier: workspace:^
+        version: link:../core
+      '@fluent/bundle':
+        specifier: 'catalog:'
+        version: 0.19.1
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.92
@@ -609,6 +640,10 @@ packages:
 
   '@fastify/proxy-addr@5.1.0':
     resolution: {integrity: sha512-INS+6gh91cLUjB+PVHfu1UqcB76Sqtpyp7bnL+FYojhjygvOPA9ctiD/JDKsyD9Xgu4hUhCSJBPig/w7duNajw==}
+
+  '@fluent/bundle@0.19.1':
+    resolution: {integrity: sha512-SWJLZrPamDPsJlFFOW1nkgN0j0rbPbmSdmK0XAoXlyqKieLtMVl4vzng3aR5pwKoUx0scug8+YY2oct3fdfy9A==}
+    engines: {node: '>=18.0.0', npm: '>=7.0.0'}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -3683,6 +3718,8 @@ snapshots:
     dependencies:
       '@fastify/forwarded': 3.0.1
       ipaddr.js: 2.4.0
+
+  '@fluent/bundle@0.19.1': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

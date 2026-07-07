@@ -2,10 +2,10 @@ import { it } from "@effect/vitest"
 import { Context, Effect, Exit, Layer, Option, Ref } from "effect"
 import { describe, expect } from "vitest"
 
-import { Menu } from "@fibergram/menu"
 import { CallbackData, DialogStore, Router, UpdateContext } from "@fibergram/core"
 import { TelegramClient, TelegramError } from "@fibergram/core/client"
 import { TestTelegram, Updates } from "@fibergram/core/testing"
+import { Menu } from "@fibergram/menu"
 
 import type { BotApi } from "@fibergram/core/client"
 
@@ -292,19 +292,18 @@ describe("Menu", () => {
       expect(Option.map(user43, (s) => (s as Menu.NavState).current)).toEqual(Option.some("main"))
     }).pipe(Effect.provide(DialogStore.layerMemory)))
 
-  it.effect("derives allowed_updates and ignores foreign updates", () =>
-    Effect.gen(function* () {
-      const main = Menu.make("main", { text: "Main" }).text("a", "Alpha", Effect.void)
-      const route = Menu.route(main)
-      expect(Router.allowedUpdates(Router.make(route))).toEqual(["callback_query"])
+  it("derives allowed_updates and ignores foreign updates", () => {
+    const main = Menu.make("main", { text: "Main" }).text("a", "Alpha", Effect.void)
+    const route = Menu.route(main)
+    expect(Router.allowedUpdates(Router.make(route))).toEqual(["callback_query"])
 
-      expect(Option.isNone(route.match({ updateId: 1 }))).toBe(true)
-      expect(
-        Option.isNone(
-          route.match(Updates.callback({ updateId: 1, chatId: 100, fromId: 42, data: "other:1" }))
-        )
-      ).toBe(true)
-    }))
+    expect(Option.isNone(route.match({ updateId: 1 }))).toBe(true)
+    expect(
+      Option.isNone(
+        route.match(Updates.callback({ updateId: 1, chatId: 100, fromId: 42, data: "other:1" }))
+      )
+    ).toBe(true)
+  })
 
   it.effect("oversized ids fail without a CallbackStore and spill with one", () =>
     Effect.gen(function* () {

@@ -8,6 +8,7 @@
     { "path": "packages/webhook" },
     { "path": "packages/durable" },
     { "path": "packages/chat-members" },
+    { "path": "packages/i18n" },
     { "path": "packages/menu" }
   ]
 }

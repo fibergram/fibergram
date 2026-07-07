@@ -220,7 +220,7 @@ const toLabel = (label: Label<any, any>): AnyLabel =>
 const appendItem = (source: Source, item: Item): Source => {
   const rows = source.rows.length === 0 ? [[]] as ReadonlyArray<ReadonlyArray<Item>> : source.rows
   const head = rows.slice(0, -1)
-  const last = rows[rows.length - 1] ?? []
+  const last = rows.at(-1) ?? []
   return { ...source, rows: [...head, [...last, item]] }
 }
 
@@ -626,23 +626,23 @@ const handle = (
         }
         break
       }
-      case "n": {
+      case "n":
         if (panes.has(payload[1])) {
           yield* redraw({ ...state, stack: [...state.stack, state.current], current: payload[1] })
         }
         break
-      }
-      case "k": {
+      
+      case "k":
         if (state.stack.length > 0) {
           yield* redraw({
             ...state,
             stack: state.stack.slice(0, -1),
-            current: state.stack[state.stack.length - 1] ?? source.id
+            current: state.stack.at(-1) ?? source.id
           })
         }
         break
-      }
-      case "p": {
+      
+      case "p":
         if (payload[1] !== state.current) {
           yield* redraw(state)
           break
@@ -652,7 +652,7 @@ const handle = (
           pages: { ...state.pages, [`${payload[1]}/${payload[2]}`]: payload[3] }
         })
         break
-      }
+      
       case "i": {
         if (payload[1] !== state.current) {
           yield* redraw(state)

@@ -29,6 +29,9 @@ catalog:
   eslint-plugin-regexp: ^2.9.0
   globals: ^15.15.0
 
+  # --- i18n runtime (reference Fluent implementation, used by @fibergram/i18n) ---
+  "@fluent/bundle": ^0.19.1
+
   # --- Webhook framework adapters (optional peers; type-only + integration tests) ---
   express: ^5.1.0
   "@types/express": ^5.0.1
