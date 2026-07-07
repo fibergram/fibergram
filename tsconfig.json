@@ -7,6 +7,7 @@
     { "path": "packages/core" },
     { "path": "packages/webhook" },
     { "path": "packages/durable" },
-    { "path": "packages/chat-members" }
+    { "path": "packages/chat-members" },
+    { "path": "packages/menu" }
   ]
 }

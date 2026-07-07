@@ -36,6 +36,7 @@ const program = Effect.gen(function* () {
 |---|---|
 | [`@fibergram/core`](./packages/core) | routing, dialogs, sessions, client, polling, testing, UI helpers |
 | [`@fibergram/webhook`](./packages/webhook) | webhook ingestion (web-standard `Request`, Express/Fastify adapters) |
+| [`@fibergram/menu`](./packages/menu) | stateful inline menus: submenu/back/pagination, state in `DialogStore` |
 | [`@fibergram/durable`](./packages/durable) | persisted dialogs, durable timers, passivation |
 | [`@fibergram/chat-members`](./packages/chat-members) | chat-membership cache fed by `chat_member` updates |
 

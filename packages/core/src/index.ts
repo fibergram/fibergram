@@ -101,6 +101,13 @@ export * as Chat from "./Chat.js"
 export * as SentMessage from "./SentMessage.js"
 
 /**
+ * `File` - hydrated file values: `BotApi.File` plus `.url` / `.download()`.
+ *
+ * @since 0.1.0
+ */
+export * as File from "./File.js"
+
+/**
  * `MediaGroup` - an immutable album builder for `sendMediaGroup`.
  *
  * @since 0.1.0
