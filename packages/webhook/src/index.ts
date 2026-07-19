@@ -15,6 +15,15 @@
 export * as Webhook from "./Webhook.js"
 
 /**
+ * Multi-bot webhook fan-out (`Multibot.make`/`Multibot.fromMap`): one HTTP
+ * endpoint routing to many per-bot `Webhook`s by a token in the request path -
+ * the analog of grammY's `TokenBasedRequestHandler`.
+ *
+ * @since 0.1.0
+ */
+export * as Multibot from "./Multibot.js"
+
+/**
  * Express adapter (`@fibergram/webhook/express`): `Express.middleware` bridging an
  * express `RequestHandler` to `Webhook.handle`.
  *

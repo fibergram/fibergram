@@ -38,6 +38,36 @@ const program = Effect.gen(function* () {
 )
 ```
 
+### Multiple bots on one endpoint
+
+`Multibot` fans a single HTTP endpoint out to many bots — grammY's `TokenBasedRequestHandler` analog. Each bot keeps its own `Webhook` (queue + dispatcher); requests are routed by a key in the path (by default the last path segment), so point each bot's `setWebhook` at `https://host/webhook/<token>`. An unknown key answers `404`; otherwise the resolved bot's own status flows through.
+
+```ts
+import { Multibot, Webhook } from "@fibergram/webhook"
+import { Dispatcher, Dialog } from "@fibergram/core"
+import { Effect } from "effect"
+
+const echo = Dialog.stateless({ onUpdate: () => Effect.void })
+
+const program = Effect.gen(function* () {
+  const alice = yield* Webhook.make({ secretToken: "alice-secret" })
+  const bob = yield* Webhook.make({ secretToken: "bob-secret" })
+  yield* Effect.forkScoped(Dispatcher.run({ updates: alice.updates, dialog: echo }))
+  yield* Effect.forkScoped(Dispatcher.run({ updates: bob.updates, dialog: echo }))
+
+  const multibot = Multibot.fromMap(
+    new Map([
+      ["alice-token", alice],
+      ["bob-token", bob]
+    ])
+  )
+  //   export default { fetch: (request) => multibot.handle(request) }
+  return multibot
+})
+```
+
+Use `Multibot.make({ resolve })` with a `(key) => Effect<Option<Webhook>>` resolver when bots come and go at runtime (lazy creation, DB lookup); `fromMap` is the fixed-registry shortcut. Both expose the same `handle`/`httpApp` pair as `Webhook`.
+
 ### Express
 
 ```ts
@@ -72,6 +102,8 @@ const program = Effect.gen(function* () {
 |---|---|---|
 | `Webhook.make(options?)` | `@fibergram/webhook` | `Effect<Webhook, never, Scope>` — queue + `updates` stream + `handle` + `httpApp` |
 | `Webhook.secretTokenHeader` | `@fibergram/webhook` | The `"x-telegram-bot-api-secret-token"` header constant |
+| `Multibot.make(options)` | `@fibergram/webhook` | `Multibot` — routes one endpoint to many `Webhook`s via a `(key) => Effect<Option<Webhook>>` resolver |
+| `Multibot.fromMap(bots, options?)` | `@fibergram/webhook` | `Multibot` over a fixed `ReadonlyMap<string, Webhook>` registry |
 | `Express.middleware(webhook)` | `@fibergram/webhook/express` | Express 5 `RequestHandler` |
 | `Fastify.handler(webhook)` | `@fibergram/webhook/fastify` | Fastify 5 `RouteHandlerMethod` |
 
