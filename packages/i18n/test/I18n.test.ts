@@ -1,8 +1,9 @@
 import { it } from "@effect/vitest"
-import { Cause, Effect, Exit, Option } from "effect"
+import { Cause, Effect, Exit, Layer, Option, Ref, Stream } from "effect"
 import { describe, expect } from "vitest"
 
-import { DialogStore, Router, UpdateContext } from "@fibergram/core"
+import { Coroutine, Dedup, DialogStore, Dispatcher, Router, UpdateContext } from "@fibergram/core"
+import { TelegramClient } from "@fibergram/core/client"
 import { I18n } from "@fibergram/i18n"
 
 import type { BotApi } from "@fibergram/core/client"
@@ -170,4 +171,51 @@ describe("I18n", () => {
       /defaultLocale "de"/
     )
   })
+})
+
+// A TelegramClient that records only the text of each sendMessage.
+const recordingClient = (sent: Ref.Ref<ReadonlyArray<string>>) =>
+  Layer.succeed(
+    TelegramClient.TelegramClient,
+    {
+      sendMessage: (params: BotApi.SendMessageParams) =>
+        Effect.as(Ref.update(sent, (all) => [...all, params.text]), {
+          messageId: 1,
+          date: 0,
+          chat: { id: Number(params.chatId), type: "private" },
+          text: params.text
+        })
+    } as unknown as TelegramClient.TelegramClientService
+  )
+
+describe("I18n — reply", () => {
+  it.effect("formats a key in the current locale and sends it", () =>
+    Effect.gen(function* () {
+      const sent = yield* Ref.make<ReadonlyArray<string>>([])
+      yield* i18n.reply("hello", { name: "Ada" }).pipe(
+        inUpdate(messageUpdate("hi", "ru")),
+        Effect.provide(recordingClient(sent))
+      )
+      expect(yield* Ref.get(sent)).toEqual(["Привет, Ada!"])
+    }))
+})
+
+describe("I18n — capture", () => {
+  it.effect("captures the locale durably and translates purely thereafter", () =>
+    Effect.gen(function* () {
+      const sent = yield* Ref.make<ReadonlyArray<string>>([])
+      const wizard = Coroutine.make("cap", function* (d) {
+        const t = yield* i18n.capture(d)
+        yield* d.reply(t.t("hello", { name: t.locale === "ru" ? "Аня" : "Ann" }))
+      })
+
+      // The update's sender speaks ru, so the captured translator renders ru.
+      const update: BotApi.Update = messageUpdate("/go", "ru")
+      yield* Dispatcher.run({ updates: Stream.fromIterable([update]), dialog: wizard }).pipe(
+        Effect.scoped,
+        Effect.provide([DialogStore.layerMemory, Dedup.layerMemory, recordingClient(sent)])
+      )
+
+      expect(yield* Ref.get(sent)).toEqual(["Привет, Аня!"])
+    }))
 })

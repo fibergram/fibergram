@@ -38,6 +38,14 @@ describe("Command", () => {
     expect(Option.isNone(setAge.match(msg("hello")))).toBe(true)
   })
 
+  it("matches is a boolean sugar over match", () => {
+    expect(Command.matches(ping, msg("/ping"))).toBe(true)
+    expect(Command.matches(ping, msg("/ping@bot"))).toBe(true)
+    expect(Command.matches(setAge, msg("/setage 30"))).toBe(true)
+    expect(Command.matches(ping, msg("/other"))).toBe(false)
+    expect(Command.matches(ping, msg("hello"))).toBe(false)
+  })
+
   it.effect("zips whitespace tokens onto multiple fields positionally", () =>
     Effect.gen(function* () {
       const args = yield* Option.getOrThrow(coords.parse(msg("/coords 3 4")))

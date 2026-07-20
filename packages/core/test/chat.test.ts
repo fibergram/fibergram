@@ -151,4 +151,25 @@ describe("Chat accessors", () => {
 
       expect((yield* Ref.get(tg.sent))[0]?.text).toBe("Tester")
     }))
+
+  it.effect("userId resolves the sender, falling back to chatId", () =>
+    Effect.gen(function* () {
+      const tg = yield* TestTelegram.make
+      const dialog = Dialog.stateless({
+        onUpdate: () => Effect.gen(function* () {
+          const { chatId, userId } = yield* Chat.identity
+          const alsoUserId = yield* Chat.userId
+          yield* Chat.reply(`${chatId}:${userId}:${alsoUserId}`)
+        })
+      })
+      yield* runDialog(tg, dialog, [
+        // A callback update carries a sender (42) distinct from the chat (100).
+        TestTelegram.callbackUpdate(1, 100, 42, "x"),
+        // A plain text update carries no sender, so userId falls back to chatId.
+        TestTelegram.textUpdate(2, 777, "hi")
+      ], DialogAddress.byUpdate())
+
+      const sent = yield* Ref.get(tg.sent)
+      expect(sent.map((s) => s.text)).toEqual(["100:42:42", "777:777:777"])
+    }))
 })

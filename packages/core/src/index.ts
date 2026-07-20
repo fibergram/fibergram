@@ -143,6 +143,14 @@ export * as StartLink from "./StartLink.js"
 export * as Coroutine from "./Coroutine.js"
 
 /**
+ * The scene manager composing a `Router` with named `Coroutine` wizards as one
+ * `Dialog` (entry guards, shared cancel, router fallthrough).
+ *
+ * @since 0.1.0
+ */
+export * as Conversations from "./Conversations.js"
+
+/**
  * Handler-style update routing with declarative `Command`/`CallbackData` sugar
  * and type-level requirement accumulation.
  *

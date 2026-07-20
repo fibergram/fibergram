@@ -1,6 +1,6 @@
 {
   "name": "@fibergram/menu",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Stateful inline menus with submenu/back/pagination over CallbackData, nav state in DialogStore",
   "type": "module",
   "license": "MIT",

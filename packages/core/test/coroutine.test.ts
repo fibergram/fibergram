@@ -190,6 +190,61 @@ describe("Coroutine — durable activity (d.run) and divergence guard", () => {
     }))
 })
 
+describe("Coroutine — choose (keyboard step)", () => {
+  const sentMarkups = (tg: TestTelegram.TestTelegram) =>
+    Effect.map(Ref.get(tg.sent), (sent) => sent.map((s) => s.replyMarkup))
+
+  it.effect("sends a reply keyboard and resumes with the tapped choice's id", () =>
+    Effect.gen(function* () {
+      const tg = yield* TestTelegram.make
+      const picked = yield* Ref.make<string>("")
+      const pick = Coroutine.make("pick", function* (d) {
+        const zone = yield* d.choose("Where?", [
+          { id: "hall", label: "Main hall" },
+          { id: "terrace", label: "Terrace" }
+        ], { columns: 1 })
+        yield* d.effect(Ref.set(picked, zone))
+        yield* d.reply(`zone=${zone}`)
+      })
+
+      yield* runWith(pick, tg, [
+        TestTelegram.textUpdate(1, 100, "/x"),
+        TestTelegram.textUpdate(2, 100, "Terrace")
+      ])
+
+      // The wizard resumes with the stable id, not the label.
+      expect(yield* Ref.get(picked)).toBe("terrace")
+      expect(yield* texts(tg)).toEqual(["Where?", "zone=terrace"])
+      // The question carried a one-time reply keyboard of the labels.
+      const markup = (yield* sentMarkups(tg))[0] as { keyboard: ReadonlyArray<ReadonlyArray<{ text: string }>> }
+      expect(markup.keyboard).toEqual([[{ text: "Main hall" }], [{ text: "Terrace" }]])
+    }))
+
+  it.effect("re-asks (re-showing the keyboard) when the reply matches no label", () =>
+    Effect.gen(function* () {
+      const tg = yield* TestTelegram.make
+      const pick = Coroutine.make("pick", function* (d) {
+        const answer = yield* d.choose("Yes or no?", [
+          { id: "y", label: "Yes" },
+          { id: "n", label: "No" }
+        ], { onInvalid: () => "Tap a button." })
+        yield* d.reply(`got=${answer}`)
+      })
+
+      yield* runWith(pick, tg, [
+        TestTelegram.textUpdate(1, 100, "/x"),
+        TestTelegram.textUpdate(2, 100, "maybe"),
+        TestTelegram.textUpdate(3, 100, "No")
+      ])
+
+      expect(yield* texts(tg)).toEqual(["Yes or no?", "Tap a button.", "got=n"])
+      const markups = yield* sentMarkups(tg)
+      // The re-ask carries the keyboard again, the final reply carries none.
+      expect(markups[1]).toBeDefined()
+      expect(markups[2]).toBeUndefined()
+    }))
+})
+
 describe("Coroutine — effect ordering and composition", () => {
   it.effect("performs reply/effect/run in program order, not run-first", () =>
     Effect.gen(function* () {

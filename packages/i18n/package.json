@@ -1,6 +1,6 @@
 {
   "name": "@fibergram/i18n",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Fluent (.ftl) localization for fibergram bots: ambient locale, DialogStore-persisted preference, localized hears",
   "type": "module",
   "license": "MIT",

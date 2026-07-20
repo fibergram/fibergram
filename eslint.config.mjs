@@ -50,7 +50,12 @@ export default tseslint.config(
 
   // --- Type-aware TypeScript (the fibergram packages) ---
   {
-    files: ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts"],
+    files: [
+      "packages/*/src/**/*.ts",
+      "packages/*/test/**/*.ts",
+      "examples/*/src/**/*.ts",
+      "examples/*/test/**/*.ts"
+    ],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,
@@ -63,7 +68,7 @@ export default tseslint.config(
         // tsconfig.test.json includes both src and test (tsconfig.json is the
         // composite build project and omits test), so one project per package
         // covers everything lintable — no central file list to keep in sync.
-        project: ["packages/*/tsconfig.test.json"],
+        project: ["packages/*/tsconfig.test.json", "examples/*/tsconfig.test.json"],
         tsconfigRootDir: import.meta.dirname
       },
       globals: globals.node
@@ -111,6 +116,11 @@ export default tseslint.config(
       // — read like `Array#map(cb, thisArg)` to this non-type-aware rule. False on
       // every combinator call, so it must be off for an Effect codebase.
       "unicorn/no-array-method-this-argument": OFF,
+      // Same false positive: `Effect.forEach(iterable, f)` is a data-first Effect
+      // combinator, not `Array#forEach`. This rule flags every `.forEach(` call by
+      // name, so it misfires on the pervasive `Effect.forEach` — off for the same
+      // reason as `no-array-method-this-argument` above.
+      "unicorn/no-array-for-each": OFF,
       "unicorn/no-negated-condition": OFF,
       // Effect's tagged errors are class factories: `class E extends
       // Data.TaggedError("E")<{…}> {}`. This rule's autofix wrongly inserts `new`
@@ -165,7 +175,6 @@ export default tseslint.config(
       "unicorn/prefer-code-point": WARN,
       "unicorn/consistent-function-scoping": WARN,
       "unicorn/no-nested-ternary": WARN,
-      "unicorn/no-array-for-each": WARN,
       // Genuine ReDoS smell worth a human look, but not an auto-fixable blocker.
       "regexp/no-super-linear-backtracking": WARN
     }

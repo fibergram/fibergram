@@ -30,12 +30,12 @@
  * @since 0.1.0
  */
 import { FluentBundle, FluentResource } from "@fluent/bundle"
-import { Context, Effect, Layer, Option } from "effect"
+import { Context, Effect, Layer, Option, Schema } from "effect"
 
-import { DialogAddress, DialogStore, Message, UpdateContext } from "@fibergram/core"
+import { Chat, DialogAddress, DialogStore, Message, UpdateContext } from "@fibergram/core"
 
-import type { Router } from "@fibergram/core"
-import type { BotApi } from "@fibergram/core/client"
+import type { Coroutine, Router, SentMessage } from "@fibergram/core"
+import type { BotApi, TelegramClient, TelegramError } from "@fibergram/core/client"
 import type { FluentVariable } from "@fluent/bundle"
 
 /**
@@ -56,6 +56,21 @@ export type Vars = Record<string, FluentVariable>
  * @since 0.1.0
  */
 export type Scope = "chat" | "user"
+
+/**
+ * A translator bound to one resolved locale: the negotiated `locale` tag and a
+ * **pure** `t` lookup against it (falling back to the default locale, then the
+ * key). This is what {@link I18nService.capture} returns inside a coroutine -
+ * once the locale is captured by a durable step, every subsequent translation is
+ * a deterministic function of persisted state, so replays render identically.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface Translator {
+  readonly locale: string
+  readonly t: (key: string, vars?: Vars) => string
+}
 
 /**
  * Options for {@link make}: the `.ftl` sources per locale tag (one string or
@@ -105,6 +120,25 @@ export interface I18nService {
   readonly t: (key: string, vars?: Vars) => Effect.Effect<string>
   /** Pure lookup: the formatted message in exactly `locale`, if it defines `key`. */
   readonly translate: (locale: string, key: string, vars?: Vars) => Option.Option<string>
+  /**
+   * Formats `key` in the current locale and sends it to the current chat -
+   * `Chat.reply(yield* t(key))` in one call. Cuts the
+   * `Effect.flatMap(t(key), Chat.reply)` boilerplate a localized bot repeats for
+   * every reply.
+   */
+  readonly reply: (
+    key: string,
+    vars?: Vars
+  ) => Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient>
+  /**
+   * Captures the current locale through a **durable** coroutine step and returns
+   * a {@link Translator} bound to it. Use it once at the top of a wizard -
+   * `const t = yield* i18n.capture(d)` - so the locale is fixed in the coroutine's
+   * persisted state and every later `t(...)` is a pure, replay-stable lookup
+   * (the ambient locale could otherwise change mid-conversation and diverge a
+   * replay).
+   */
+  readonly capture: <E, R>(d: Coroutine.Dsl<E, R>) => Generator<any, Translator, any>
   /**
    * A route matching a text/caption equal to `key`'s translation in **any**
    * loaded locale - for reply-keyboard buttons, whose presses come back as
@@ -341,6 +375,23 @@ export const make = (options: Options): I18nService => {
         })
       ))
 
+  const reply = (
+    key: string,
+    vars?: Vars
+  ): Effect.Effect<SentMessage.SentMessage, TelegramError.TelegramError, TelegramClient.TelegramClient> =>
+    Effect.flatMap(t(key, vars), (text) => Chat.reply(text))
+
+  const boundTranslate = (loc: string) => (key: string, vars?: Vars): string =>
+    Option.getOrElse(
+      Option.orElse(translate(loc, key, vars), () => translate(defaultLocale, key, vars)),
+      () => key
+    )
+
+  function* capture<E, R>(d: Coroutine.Dsl<E, R>): Generator<any, Translator, any> {
+    const loc = yield* d.run(locale, Schema.String)
+    return { locale: loc, t: boundTranslate(loc) }
+  }
+
   const hears = <E, R>(
     key: string,
     handler: (locale: string) => Effect.Effect<void, E, R>
@@ -367,7 +418,7 @@ export const make = (options: Options): I18nService => {
     }
   }
 
-  return { locales: tags, defaultLocale, locale, setLocale, t, translate, hears }
+  return { locales: tags, defaultLocale, locale, setLocale, t, translate, reply, capture, hears }
 }
 
 /**
@@ -441,3 +492,24 @@ export const setLocale = (
   target: string
 ): Effect.Effect<void, never, I18n | DialogStore.DialogStore> =>
   Effect.flatMap(I18n, (i18n) => i18n.setLocale(target))
+
+/**
+ * {@link I18nService.reply} through the {@link I18n} tag: formats `key` in the
+ * current locale and sends it to the current chat.
+ *
+ * @example
+ * import { I18n } from "@fibergram/i18n"
+ *
+ * const greet = I18n.reply("hello", { name: "Ada" })
+ *
+ * @category accessors
+ * @since 0.1.0
+ */
+export const reply = (
+  key: string,
+  vars?: Vars
+): Effect.Effect<
+  SentMessage.SentMessage,
+  TelegramError.TelegramError,
+  I18n | TelegramClient.TelegramClient
+> => Effect.flatMap(I18n, (i18n) => i18n.reply(key, vars))

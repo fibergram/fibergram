@@ -37,6 +37,7 @@ import { Data, Effect, Option, Schema } from "effect"
 
 import * as Chat from "./Chat.js"
 import * as Decision from "./Decision.js"
+import * as Keyboard from "./ui/Keyboard.js"
 
 import type { BotApi, TelegramClient, TelegramError } from "./client/index.js"
 import type { Dialog } from "./Dialog.js"
@@ -93,6 +94,7 @@ type Op<E, R> =
     readonly question: string
     readonly schema: Schema.Codec<any>
     readonly onInvalid: ((input: string | undefined) => string) | undefined
+    readonly replyMarkup: Chat.ReplyMarkup | undefined
   }
   | { readonly _tag: "say"; readonly effect: Effect.Effect<void, E, R> }
   | {
@@ -106,12 +108,15 @@ interface Suspend<A> {
   readonly [Symbol.iterator]: () => Iterator<Op<any, any>, A, any>
 }
 
-const single = <A>(op: Op<any, any>): Suspend<A> => ({
+// A single-yield iterable that resumes the generator with `map(sent)` (identity
+// when `map` is omitted). `map` runs on every replay, so it must be a pure
+// function of `sent` (e.g. a label→id lookup) to stay deterministic.
+const single = <A>(op: Op<any, any>, map?: (sent: unknown) => A): Suspend<A> => ({
   [Symbol.iterator]() {
     let yielded = false
     return {
       next(sent: unknown): IteratorResult<Op<any, any>, A> {
-        if (yielded) return { done: true, value: sent as A }
+        if (yielded) return { done: true, value: (map ? map(sent) : sent) as A }
         yielded = true
         return { done: false, value: op }
       }
@@ -128,6 +133,39 @@ const single = <A>(op: Op<any, any>): Suspend<A> => ({
 export interface PromptOptions {
   /** Message to re-send when the answer fails to decode; defaults to the question. */
   readonly onInvalid?: (input: string | undefined) => string
+  /**
+   * Reply markup sent with the question - an inline keyboard, a custom reply
+   * keyboard, or a keyboard-removal. Re-sent (with the `onInvalid` text) when an
+   * answer fails to decode, so a keyboard-backed prompt reappears on a bad tap.
+   */
+  readonly replyMarkup?: Chat.ReplyMarkup
+}
+
+/**
+ * A tappable option for {@link Dsl.choose}: the visible `label` (shown on the
+ * reply-keyboard button and matched against the user's reply) maps back to a
+ * stable `id` the wizard branches on. Keeping the two apart lets button text be
+ * localized or renamed without touching the wizard's control flow.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface Choice<Id extends string> {
+  readonly id: Id
+  readonly label: string
+}
+
+/**
+ * Options for {@link Dsl.choose}.
+ *
+ * @category models
+ * @since 0.1.0
+ */
+export interface ChooseOptions {
+  /** Reply-keyboard column count (buttons reflow into rows of this width); default `2`. */
+  readonly columns?: number
+  /** Message to re-send (with the keyboard) when the reply matches no label; defaults to the question. */
+  readonly onInvalid?: (input: string | undefined) => string
 }
 
 /**
@@ -143,6 +181,19 @@ export interface Dsl<E, R> {
     schema: Schema.Codec<A, I>,
     options?: PromptOptions
   ) => Suspend<A>
+  /**
+   * A single-choice keyboard step: send `question` with a one-time reply keyboard
+   * of the choices' `label`s, suspend, and resume with the tapped choice's `id`.
+   * A typed answer that matches a label works too; anything else re-asks (with
+   * `onInvalid`). Collapses the send-keyboard-then-prompt-then-map-label dance
+   * into one call, so a wizard branches on stable ids without hand-rolling the
+   * keyboard.
+   */
+  readonly choose: <Id extends string>(
+    question: string,
+    choices: ReadonlyArray<Choice<Id>>,
+    options?: ChooseOptions
+  ) => Suspend<Id>
   /** Send a message to the current chat as a recorded step (performed once). */
   readonly reply: (text: string, options?: Chat.ReplyOptions) => Suspend<void>
   /** Perform an arbitrary effect as a recorded step (performed once, not on replay). */
@@ -199,13 +250,38 @@ export const make = <
         _tag: "prompt",
         question,
         schema: schema as Schema.Codec<any>,
-        onInvalid: options?.onInvalid
+        onInvalid: options?.onInvalid,
+        replyMarkup: options?.replyMarkup
       }),
+    choose: (question, choices, options) => {
+      const labels = choices.map((choice) => choice.label)
+      const columns = options?.columns ?? 2
+      const keyboard = labels.reduce((kb, label) => kb.text(label), Keyboard.empty)
+      const replyMarkup = Keyboard.build(keyboard.adjust(columns).resized().oneTime())
+      const idByLabel = new Map(choices.map((choice) => [choice.label, choice.id] as const))
+      return single(
+        {
+          _tag: "prompt",
+          question,
+          // `Schema.Literals` only admits a known label, so the resumed value is
+          // always one of `labels`; the map back to an id cannot miss.
+          schema: Schema.Literals(labels) as Schema.Codec<any>,
+          onInvalid: options?.onInvalid,
+          replyMarkup
+        },
+        (label) => idByLabel.get(label as string) ?? choices[0]!.id
+      )
+    },
     reply: (text, options) =>
       single({ _tag: "say", effect: Effect.asVoid(Chat.reply(text, options)) as Effect.Effect<void, E, R> }),
     effect: (effect) => single({ _tag: "say", effect }),
     run: (effect, schema) => single({ _tag: "run", effect, schema: schema as Schema.Codec<any> })
   }
+
+  const ask = (question: string, replyMarkup: Chat.ReplyMarkup | undefined): Effect.Effect<void, E, R> =>
+    Effect.asVoid(
+      Chat.reply(question, replyMarkup !== undefined ? { replyMarkup } : undefined)
+    ) as Effect.Effect<void, E, R>
 
   // On replay, the op the generator yields must match the step recorded at
   // `position`; a mismatch means the handler took a different path.
@@ -289,8 +365,9 @@ export const make = <
 
         // Live prompt at the frontier.
         if (!asked) {
-          // First time here: ask the question and suspend without consuming `update`.
-          yield* (Effect.asVoid(Chat.reply(op.question)) as Effect.Effect<void, E, R>)
+          // First time here: ask the question (with its keyboard, if any) and
+          // suspend without consuming `update`.
+          yield* ask(op.question, op.replyMarkup)
           asked = true
           break
         }
@@ -299,7 +376,8 @@ export const make = <
         const decoded = yield* decodePrompt(op.schema, update.message?.text)
         if (Option.isNone(decoded)) {
           const message = op.onInvalid ? op.onInvalid(update.message?.text) : op.question
-          yield* (Effect.asVoid(Chat.reply(message)) as Effect.Effect<void, E, R>)
+          // Re-ask with the keyboard so a choice step reappears on a bad tap.
+          yield* ask(message, op.replyMarkup)
           break // stay suspended at the same prompt
         }
         log.push({ _tag: "answer", value: decoded.value })

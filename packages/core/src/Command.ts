@@ -166,3 +166,27 @@ export function make<Fields extends Schema.Struct.Fields = {}>(
 
   return { name: normalized, description, match, decodeArgs, parse }
 }
+
+/**
+ * Whether `update` is the message form of `command` (a boolean sugar over
+ * `Option.isSome(command.match(update))`). Use it to gate on a command without
+ * caring about its arguments - e.g. inside a hand-written {@link module:Dialog}
+ * decider that enters a wizard on `/start`.
+ *
+ * @example
+ * import { Command } from "@fibergram/core"
+ *
+ * const cancel = Command.make("/cancel")
+ *
+ * const update = {
+ *   updateId: 1,
+ *   message: { messageId: 1, date: 0, chat: { id: 1, type: "private" }, text: "/cancel" }
+ * }
+ *
+ * Command.matches(cancel, update) // true
+ *
+ * @category combinators
+ * @since 0.1.0
+ */
+export const matches = (command: Command<any>, update: BotApi.Update): boolean =>
+  Option.isSome(command.match(update))

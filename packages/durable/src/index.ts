@@ -36,3 +36,11 @@ export * as DurableTimer from "./DurableTimer.js"
  * @since 0.1.0
  */
 export * as PassivatingEntityManager from "./PassivatingEntityManager.js"
+
+/**
+ * A filesystem-backed `KeyValueStore` layer (one file per key) for polling
+ * deployments that want durability with no external service.
+ *
+ * @since 0.1.0
+ */
+export * as FileKeyValueStore from "./FileKeyValueStore.js"

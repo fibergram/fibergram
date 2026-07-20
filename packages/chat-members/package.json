@@ -1,6 +1,6 @@
 {
   "name": "@fibergram/chat-members",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Chat-membership cache fed by chat_member updates, behind a KeyValueStore port",
   "type": "module",
   "license": "MIT",

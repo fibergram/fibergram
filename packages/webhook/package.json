@@ -1,6 +1,6 @@
 {
   "name": "@fibergram/webhook",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Ingestion Layer: HttpServer + secret-token validation, framework-agnostic WebhookHandler",
   "type": "module",
   "license": "MIT",

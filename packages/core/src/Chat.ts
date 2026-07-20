@@ -137,6 +137,61 @@ export const from: Effect.Effect<Option.Option<BotApi.User>> = Effect.map(
   }
 )
 
+/**
+ * The id of the sender to attribute the current update to, with a sensible
+ * fallback: the sender's id when the update carries one ({@link from}), otherwise
+ * the {@link chatId}. In a private chat the two coincide; the fallback keeps a
+ * group chat (or a chatless update) working when no sender is present. This is
+ * the accessor to reach for when keying per-person data (a profile, a cart) from
+ * inside a handler, instead of matching on `Chat.from` by hand.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const program = Effect.gen(function* () {
+ *   const id = yield* Chat.userId
+ *   return id
+ * })
+ *
+ * @category accessors
+ * @since 0.1.0
+ */
+export const userId: Effect.Effect<number> = Effect.map(UpdateContext.env, (env) => {
+  const update = env.update
+  const user = update.message?.from ??
+    update.editedMessage?.from ??
+    update.callbackQuery?.from
+  return user?.id ?? env.chatId
+})
+
+/**
+ * The chat and sender identity of the current update as one record -
+ * `{ chatId, userId }`, with {@link userId}'s fallback applied. The pair most
+ * per-user persistence is keyed by; a durable-friendly single read for a wizard
+ * (`yield* d.run(Chat.identity, ...)`) rather than two separate accessors.
+ *
+ * @example
+ * import { Chat } from "@fibergram/core"
+ * import { Effect } from "effect"
+ *
+ * const program = Effect.gen(function* () {
+ *   const { chatId, userId } = yield* Chat.identity
+ *   return `${chatId}:${userId}`
+ * })
+ *
+ * @category accessors
+ * @since 0.1.0
+ */
+export const identity: Effect.Effect<{ readonly chatId: number; readonly userId: number }> =
+  Effect.map(UpdateContext.env, (env) => {
+    const update = env.update
+    const user = update.message?.from ??
+      update.editedMessage?.from ??
+      update.callbackQuery?.from
+    return { chatId: env.chatId, userId: user?.id ?? env.chatId }
+  })
+
 // --- shared field builders ---------------------------------------------------
 
 type Env = UpdateContext.UpdateEnv

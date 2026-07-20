@@ -1,6 +1,6 @@
 {
   "name": "@fibergram/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Dialog/decider, receive, Decision, EntityManager, Router, typed errors, CallbackData",
   "type": "module",
   "license": "MIT",

@@ -1,5 +1,6 @@
 packages:
   - "packages/*"
+  - "examples/*"
 
 # Centralized dependency versions (design §14.1).
 # effect is pinned hard (no caret) — volatile beta, upgraded deliberately per changelog (§9).
