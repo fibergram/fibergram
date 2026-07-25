@@ -34,6 +34,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Docgen
+        run: pnpm docgen
+
       - name: Circular deps
         run: pnpm circular
 
