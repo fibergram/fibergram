@@ -1,6 +1,12 @@
 packages:
   - "packages/*"
   - "examples/*"
+  - "website"
+
+# Postinstall scripts are opt-in (pnpm 10). `sharp` builds the native image
+# pipeline Astro uses to optimise the docs site's assets.
+onlyBuiltDependencies:
+  - sharp
 
 # Centralized dependency versions (design §14.1).
 # effect is pinned hard (no caret) — volatile beta, upgraded deliberately per changelog (§9).

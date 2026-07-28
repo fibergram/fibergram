@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Effect-native фреймворк для Telegram-ботов: handler = Effect<A, E, R>, диалог = addressable entity",
+  "description": "Effect-native \u0444\u0440\u0435\u0439\u043c\u0432\u043e\u0440\u043a \u0434\u043b\u044f Telegram-\u0431\u043e\u0442\u043e\u0432: handler = Effect<A, E, R>, \u0434\u0438\u0430\u043b\u043e\u0433 = addressable entity",
   "license": "MIT",
   "packageManager": "pnpm@10.26.2",
   "engines": {
@@ -13,12 +13,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo run build",
+    "build": "turbo run build --filter=!@fibergram/website",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "lint:fix": "eslint . --fix",
     "docgen": "turbo run docgen",
+    "docs:dev": "pnpm --filter @fibergram/website dev",
+    "docs:build": "turbo run build --filter=@fibergram/website",
     "check:exports": "turbo run check:exports",
     "circular": "madge --circular --extensions ts packages/*/src",
     "codegen:fetch": "curl -fsSL https://raw.githubusercontent.com/PaulSonOfLars/telegram-bot-api-spec/main/api.json -o packages/core/codegen/api.json",
@@ -26,7 +28,7 @@
     "codegen:check": "node --experimental-strip-types packages/core/codegen/generate.ts --check",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "turbo run build && changeset publish"
+    "release": "turbo run build --filter=!@fibergram/website && changeset publish"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",

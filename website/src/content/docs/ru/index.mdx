@@ -1,0 +1,93 @@
+---
+title: fibergram
+description: Effect-нативный фреймворк для Telegram-ботов — хендлер это Effect<A, E, R>, диалог это адресуемая сущность.
+template: splash
+hero:
+  tagline: Telegram-боты как Effect-программы. Типизированные ошибки, внедрение зависимостей через Layer, апдейты как Stream и многошаговые диалоги как приостанавливаемые корутины.
+  actions:
+    - text: Начать
+      link: /ru/getting-started/introduction/
+      icon: right-arrow
+    - text: GitHub
+      link: https://github.com/fibergram/fibergram
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components"
+
+```ts
+import { Chat, Dedup, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
+import { TelegramClient } from "@fibergram/core/client"
+import { Polling } from "@fibergram/core/polling"
+import { Effect, Layer } from "effect"
+import { FetchHttpClient } from "effect/unstable/http"
+
+const echo = Dialog.stateless({
+  onUpdate: (update) =>
+    Effect.gen(function* () {
+      const text = update.message?.text
+      if (text !== undefined) yield* Chat.reply(text)
+    })
+})
+
+const program = Effect.gen(function* () {
+  const updates = yield* Polling.make()
+  yield* Dispatcher.run({ updates, dialog: echo })
+}).pipe(
+  Effect.scoped,
+  Effect.provide([
+    DialogStore.layerMemory,
+    Dedup.layerMemory,
+    TelegramClient.layer.pipe(Layer.provide(FetchHttpClient.layer)) // токен из BOT_TOKEN
+  ])
+)
+```
+
+<CardGrid stagger>
+  <Card title="Никакого god-объекта `ctx`" icon="puzzle">
+    Амбиентное состояние апдейта живёт в `Context.Reference`, который диспетчер
+    выставляет ровно на один апдейт. Всё остальное хендлер получает через открытый
+    канал `R`, а закрывает его один `Layer` на краю.
+
+    [Подробнее](/ru/concepts/no-ctx/)
+  </Card>
+
+  <Card title="Ошибки видны в типе" icon="error">
+    Любой вызов клиента падает тегированным union — `RateLimited`, `BotBlocked`,
+    `MessageNotModified`, … — поэтому `catchTag` работает, а доменные ошибки текут
+    по `E` нетронутыми.
+
+    [Подробнее](/ru/concepts/errors/)
+  </Card>
+
+  <Card title="Один примитив, три режима" icon="rocket">
+    Команда без состояния, визард на несколько минут и RPG на несколько дней — одна
+    и та же адресуемая сущность. Что именно вы получите, решает выбор `Layer`, а не
+    переписывание кода.
+
+    [Подробнее](/ru/concepts/dialogs/)
+  </Card>
+
+  <Card title="Тесты без сети" icon="approve-check">
+    `TestTelegram` записывает исходящие вызовы, `Updates` фабрикует входящие,
+    а `TestClock` крутит любые таймауты. Бот целиком под тестом, без единого сокета.
+
+    [Подробнее](/ru/guides/testing/)
+  </Card>
+</CardGrid>
+
+## Куда идти дальше
+
+- Впервые здесь? Начните со [введения](/ru/getting-started/introduction/), затем
+  [соберите первого бота](/ru/getting-started/your-first-bot/).
+- Пришли из grammY или aiogram? [Обзор архитектуры](/ru/concepts/architecture/)
+  объясняет, что fibergram делает иначе и почему.
+- Ищете конкретный экспорт? [Справочник API](/ru/reference/) генерируется из
+  исходников, и каждый пример в нём компилируется в CI.
+
+:::caution[До 1.0]
+fibergram таргетит **Effect v4**, который пока в бете и запинен точной версией.
+Периметр вокруг `@fibergram/durable` будет двигаться, пока модули persistence
+и cluster в Effect не стабилизируются.
+:::

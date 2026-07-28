@@ -1,0 +1,92 @@
+---
+title: fibergram
+description: Effect-native framework for Telegram bots — a handler is an Effect<A, E, R>, a dialog is an addressable entity.
+template: splash
+hero:
+  tagline: Telegram bots as Effect programs. Typed errors, dependency injection via Layer, updates as a Stream, and multi-step dialogs as suspendable coroutines.
+  actions:
+    - text: Get started
+      link: /getting-started/introduction/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/fibergram/fibergram
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components"
+
+```ts
+import { Chat, Dedup, Dialog, DialogStore, Dispatcher } from "@fibergram/core"
+import { TelegramClient } from "@fibergram/core/client"
+import { Polling } from "@fibergram/core/polling"
+import { Effect, Layer } from "effect"
+import { FetchHttpClient } from "effect/unstable/http"
+
+const echo = Dialog.stateless({
+  onUpdate: (update) =>
+    Effect.gen(function* () {
+      const text = update.message?.text
+      if (text !== undefined) yield* Chat.reply(text)
+    })
+})
+
+const program = Effect.gen(function* () {
+  const updates = yield* Polling.make()
+  yield* Dispatcher.run({ updates, dialog: echo })
+}).pipe(
+  Effect.scoped,
+  Effect.provide([
+    DialogStore.layerMemory,
+    Dedup.layerMemory,
+    TelegramClient.layer.pipe(Layer.provide(FetchHttpClient.layer)) // token from BOT_TOKEN
+  ])
+)
+```
+
+<CardGrid stagger>
+  <Card title="No `ctx` god-object" icon="puzzle">
+    Per-update ambient state lives in a `Context.Reference` the dispatcher stamps
+    for exactly one update. Everything else your handler needs flows through the
+    open `R` channel and is satisfied by one `Layer` at the edge.
+
+    [Read more](/concepts/no-ctx/)
+  </Card>
+
+  <Card title="Errors you can see in the type" icon="error">
+    Every client call fails with a tagged union — `RateLimited`, `BotBlocked`,
+    `MessageNotModified`, … — so `catchTag` works and your domain errors flow
+    through `E` untouched.
+
+    [Read more](/concepts/errors/)
+  </Card>
+
+  <Card title="One dialog primitive, three regimes" icon="rocket">
+    A stateless command, a minutes-long wizard, and a days-long RPG are the same
+    addressable entity. Which one you get is a `Layer` choice, not a rewrite.
+
+    [Read more](/concepts/dialogs/)
+  </Card>
+
+  <Card title="Testable without a network" icon="approve-check">
+    `TestTelegram` records outbound calls, `Updates` fabricates incoming ones,
+    and `TestClock` drives every timeout. A whole bot under test, no sockets.
+
+    [Read more](/guides/testing/)
+  </Card>
+</CardGrid>
+
+## Where to go next
+
+- New here? Start with the [introduction](/getting-started/introduction/) and then
+  [build your first bot](/getting-started/your-first-bot/).
+- Coming from grammY or aiogram? The [architecture overview](/concepts/architecture/)
+  explains what fibergram does differently and why.
+- Looking for a specific export? The [API reference](/reference/) is generated from
+  the source, and every example in it compiles in CI.
+
+:::caution[Pre-1.0]
+fibergram targets **Effect v4**, which is still in beta and pinned to an exact
+version. Expect the perimeter around `@fibergram/durable` to move as Effect's
+persistence and cluster modules stabilise.
+:::

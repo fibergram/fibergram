@@ -22,6 +22,10 @@
     },
     "check:exports": {
       "dependsOn": ["build"]
+    },
+    "@fibergram/website#build": {
+      "dependsOn": ["^docgen"],
+      "outputs": ["dist/**", ".astro/**"]
     }
   }
 }

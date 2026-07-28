@@ -1,0 +1,45 @@
+/*
+ * fibergram docs theme — Effect-adjacent purple accent on Starlight's defaults.
+ * Only the accent + gray scales are overridden; everything else stays stock so
+ * upstream Starlight changes keep working.
+ */
+:root {
+  --sl-color-accent-low: #21053a;
+  --sl-color-accent: #8b5cf6;
+  --sl-color-accent-high: #d5c4fb;
+
+  --sl-color-gray-1: #eceef2;
+  --sl-color-gray-2: #c0c2c7;
+  --sl-color-gray-3: #888b96;
+  --sl-color-gray-4: #545861;
+  --sl-color-gray-5: #353841;
+  --sl-color-gray-6: #24272f;
+  --sl-color-black: #17181c;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #ddd2fb;
+  --sl-color-accent: #6d28d9;
+  --sl-color-accent-high: #360a63;
+
+  --sl-color-gray-1: #24272f;
+  --sl-color-gray-2: #353841;
+  --sl-color-gray-3: #545861;
+  --sl-color-gray-4: #888b96;
+  --sl-color-gray-5: #c0c2c7;
+  --sl-color-gray-6: #eceef2;
+  --sl-color-gray-7: #f5f6f8;
+  --sl-color-black: #ffffff;
+}
+
+/*
+ * The API reference is machine-generated from `@effect/docgen`: pages are long
+ * lists of signatures. Tighten them up so a module page stays scannable.
+ */
+.sl-markdown-content :is(h2, h3) > code {
+  font-size: inherit;
+}
+
+.sl-markdown-content .text-delta {
+  font-size: var(--sl-text-h4);
+}

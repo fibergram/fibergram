@@ -1,0 +1,28 @@
+{
+  "name": "@fibergram/website",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Documentation site: handwritten guides (Astro Starlight) over the auto-generated @effect/docgen API reference",
+  "license": "MIT",
+  "scripts": {
+    "sync": "node scripts/sync-api-reference.mjs",
+    "dev": "pnpm sync && astro dev",
+    "build": "pnpm sync && astro build",
+    "preview": "astro preview",
+    "clean": "node scripts/sync-api-reference.mjs --clean"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.41.4",
+    "astro": "^7.1.4",
+    "sharp": "^0.34.4"
+  },
+  "devDependencies": {
+    "@fibergram/chat-members": "workspace:*",
+    "@fibergram/core": "workspace:*",
+    "@fibergram/durable": "workspace:*",
+    "@fibergram/i18n": "workspace:*",
+    "@fibergram/menu": "workspace:*",
+    "@fibergram/webhook": "workspace:*"
+  }
+}

@@ -42,3 +42,8 @@ jobs:
 
       - name: Check exports (attw)
         run: pnpm check:exports
+
+      # Builds the Starlight site over the docgen output produced above, so a
+      # broken guide link or an invalid frontmatter block fails the PR.
+      - name: Docs site
+        run: pnpm docs:build

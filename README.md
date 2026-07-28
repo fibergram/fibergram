@@ -42,6 +42,16 @@ const program = Effect.gen(function* () {
 
 Each package README has usage examples — start with [`@fibergram/core`](./packages/core).
 
+## Documentation
+
+Guides and the generated API reference live in [`website/`](./website) and are
+available in English and Russian.
+
+```bash
+pnpm docgen     # regenerate the API reference from JSDoc
+pnpm docs:dev   # serve the site locally
+```
+
 ## Development
 
 ```bash
